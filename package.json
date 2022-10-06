@@ -1,0 +1,15 @@
+{
+  "name": "homosexualhaven",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon --watch \"src/**\" --ext \"ts,json\" --ignore \"src/**/*.spec.ts\" --ignore \"src/config.json\" --exec \"ts-node src/index.ts\""
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@discordjs/builders": "^1.2.0",
+    "@discordjs/rest": "^1.2.0",
+    "discord.js": "^14.5.0",
+    "dotenv": "^16.0.3"
+  }
+}

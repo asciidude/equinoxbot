@@ -1,0 +1,18 @@
+{
+    "welcome": {
+        "enabled": true,
+        "message": "Welcome to {GUILD.NAME}, {USER.MENTION}!",
+        "channel": "1026300571323473983"
+    },
+    "autoRole": {
+        "enabled": false,
+        "role": "1026317255807610921"
+    },
+    "triggers": [
+        {
+            "trigger": "test",
+            "response": "wow it works"
+        }
+    ],
+    "blacklistedWords": []
+}
