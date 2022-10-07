@@ -6,6 +6,7 @@ import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
 import Discord, { Collection, TextChannel, GuildMember, Interaction, ActivityType, GatewayIntentBits, Guild } from 'discord.js';
 import replaceOptions from './utils/replaceOptions';
+import chokidar from 'chokidar';
 import path from 'path';
 
 declare module "discord.js" {
@@ -23,7 +24,12 @@ const client = new Discord.Client({
     ]
 });
 
-const config = JSON.parse(fs.readFileSync(process.env.CONFIG_PATH!, 'utf-8'));
+let config = JSON.parse(fs.readFileSync(process.env.CONFIG_PATH!, 'utf-8'));
+
+// Config Watch
+chokidar.watch(process.env.CONFIG_PATH!).on('change', (event, path) => {
+    config = JSON.parse(fs.readFileSync(process.env.CONFIG_PATH!, 'utf-8'));
+});
 
 // Initialize command handler
 const recursive = function(dir: string, arr: any) {
@@ -99,10 +105,25 @@ client.on('interactionCreate', async (interaction: any) => {
 
 client.on('messageCreate', async (message) => {
     if(message.author.bot) return;
+
+    // Triggers
     const trigger = config['triggers'].filter((e: any) => e.trigger == message.content)[0];
     
     if(trigger != null && message.content.includes(trigger['trigger'])) {
-        message.reply(trigger['response'])
+        message.reply(trigger['response']);
+
+        if(trigger['delete']) {
+            if(!message.deletable) {
+                message.channel.send('⚠ Cannot delete trigger-message due to not enough permissions');
+                return;
+            }
+
+            try {
+                await message.delete();
+            } catch (err) {
+                message.channel.send('⚠ Cannot delete trigger-message due to 2FA being enabled');
+            }
+        }
     }
 });
 

@@ -1,4 +1,5 @@
 {
+    "prefix": ";",
     "welcome": {
         "enabled": true,
         "message": "Welcome to {GUILD.NAME}, {USER.MENTION}!",
@@ -11,7 +12,8 @@
     "triggers": [
         {
             "trigger": "test",
-            "response": "wow it works"
+            "response": "wow it works",
+            "delete": false
         }
     ],
     "blacklistedWords": []

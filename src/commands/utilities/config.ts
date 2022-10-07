@@ -54,6 +54,13 @@ export default {
                 )
         )
 
+        // Triggers
+        .addSubcommand(sub => 
+            sub
+                .setName('trigger')
+                .setDescription('A list of trigger-words to reply to')    
+        )
+
         // Test config
         .addSubcommand(sub => 
             sub
