@@ -34,6 +34,31 @@ export default {
                 )
         )
 
+        // Goodbye message
+        .addSubcommand(sub => 
+            sub
+                .setName('goodbye')
+                .setDescription('Set the server\'s goodbye message')
+                .addStringOption(opt =>
+                    opt
+                        .setName('message')
+                        .setDescription('The goodbye message, set to "disable" to disable the goodbye message')
+                        .setRequired(true)
+                )
+                .addChannelOption(opt =>
+                    opt
+                        .setName('channel')
+                        .setDescription('The channel to send the goodbye message to')
+                        .setRequired(false)
+                )
+                .addBooleanOption(opt =>
+                    opt
+                        .setName('dm')
+                        .setDescription('Set whether you want to DM the message instead')
+                        .setRequired(false)
+                )
+        )
+
         // Auto-role
         .addSubcommand(sub => 
             sub
@@ -116,6 +141,7 @@ export default {
 
                         .addChoices(
                             { name: '🙋 Welcome Configuration', value: 'welcome' },
+                            { name: '😢 Goodbye Configuration', value: 'goodbye' },
                             { name: '🦺 Auto-role Configuration', value: 'autorole' },
                             { name: '👂 View Prefix', value: 'prefix' },
                             { name: '💬 View Triggers', value: 'triggers' },
@@ -172,6 +198,98 @@ export default {
 
                     interaction.reply({
                         content: `Set the welcome message and set it to use DMs, check the message with \`/config test\``,
+                        ephemeral: true
+                    });
+                } else {
+                    interaction.reply({
+                        content: 'Oops! Have a look in the optional parameters to set to DM the user or use a channel.',
+                        ephemeral: true
+                    });
+                }
+
+                break;/////////////
+            // Welcome //
+            /////////////
+            case 'welcome':
+                if(interaction.options.getString('message').toLowerCase() == 'disable') {
+                    config['welcome']['enabled'] = false;
+                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+
+                    interaction.reply({
+                        content: '✅ Disabled the server\'s welcome message!',
+                        ephemeral: true
+                    });
+
+                    break;
+                }
+
+                if(interaction.options.getChannel('channel')) {
+                    config['welcome']['enabled'] = true;
+                    config['welcome']['channel'] = interaction.options.getChannel('channel').id;
+                    config['welcome']['message'] = interaction.options.getString('message');
+
+                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+
+                    interaction.reply({
+                        content: `Set the welcome message and set it to use <#${interaction.options.getChannel('channel').id}>, check the message with \`/config test\``,
+                        ephemeral: true
+                    });
+                } else if(interaction.options.getBoolean('dm')) {
+                    config['welcome']['enabled'] = true;
+                    config['welcome']['channel'] = 'dm';
+                    config['welcome']['message'] = interaction.options.getString('message');
+
+                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+
+                    interaction.reply({
+                        content: `Set the welcome message and set it to use DMs, check the message with \`/config test\``,
+                        ephemeral: true
+                    });
+                } else {
+                    interaction.reply({
+                        content: 'Oops! Have a look in the optional parameters to set to DM the user or use a channel.',
+                        ephemeral: true
+                    });
+                }
+
+                break;
+            
+            /////////////
+            // Goodbye //
+            /////////////
+            case 'goodbye':
+                if(interaction.options.getString('message').toLowerCase() == 'disable') {
+                    config['goodbye']['enabled'] = false;
+                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+
+                    interaction.reply({
+                        content: '✅ Disabled the server\'s goodbye message!',
+                        ephemeral: true
+                    });
+
+                    break;
+                }
+
+                if(interaction.options.getChannel('channel')) {
+                    config['goodbye']['enabled'] = true;
+                    config['goodbye']['channel'] = interaction.options.getChannel('channel').id;
+                    config['goodbye']['message'] = interaction.options.getString('message');
+
+                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+
+                    interaction.reply({
+                        content: `Set the goodbye message and set it to use <#${interaction.options.getChannel('channel').id}>, check the message with \`/config test\``,
+                        ephemeral: true
+                    });
+                } else if(interaction.options.getBoolean('dm')) {
+                    config['goodbye']['enabled'] = true;
+                    config['goodbye']['channel'] = 'dm';
+                    config['goodbye']['message'] = interaction.options.getString('message');
+
+                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+
+                    interaction.reply({
+                        content: `Set the goodbye message and set it to use DMs, check the message with \`/config test\``,
                         ephemeral: true
                     });
                 } else {
@@ -280,6 +398,17 @@ export default {
                             ephemeral: true
                         });
 
+                        break;
+
+                    case 'goodbye':
+                        interaction.reply({
+                            content: `**Goodbye**` +
+                                     `\nEnabled: ${config['goodbye']['enabled'] === true ? '✅' : '⛔'}` +
+                                     `\nChannel: ${(config['goodbye']['channel'] == 'dm' ? 'dm' : '<#' + config['goodbye']['channel'] + '>') || 'none'}` +
+                                     `\nMessage: ${await replaceOptions(config['goodbye']['message'], interaction.member, interaction.guild) || 'none'}`,
+                            ephemeral: true
+                        });
+    
                         break;
 
                     case 'autorole':

@@ -5,16 +5,14 @@
         "message": "Welcome to {GUILD.NAME}, {USER.NAME}!",
         "channel": "1027379406735421440"
     },
+    "goodbye": {
+        "enabled": true,
+        "message": "Goodbye, {USER.NAME}! We're sorry to see you go",
+        "channel": "1027379406735421440"
+    },
     "autoRole": {
         "enabled": false,
         "role": "1026317255807610921"
     },
-    "triggers": [
-        {
-            "trigger": "hi",
-            "response": "hi",
-            "delete": false,
-            "id": 1665164002556
-        }
-    ]
+    "triggers": []
 }

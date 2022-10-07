@@ -10,7 +10,7 @@ import cleverbot from 'cleverbot-free';
 import chokidar from 'chokidar';
 import path from 'path';
 
-declare module "discord.js" {
+declare module 'discord.js' {
     export interface Client {
         commands: Collection<unknown, any>
     }
@@ -23,6 +23,15 @@ const client = new Discord.Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildMembers
     ]
+});
+
+const tenor = require('tenorjs');
+export const Tenor = tenor.client({
+    "Key": process.env.TENOR_API_KEY!,
+    "Filter": process.env.TENOR_FILTER_STATUS,
+    "Locale": process.env.TENOR_LOCALE,
+    "MediaFilter": "basic",
+    "DateFormat": "D/MM/YYYY - H:mm:ss A"
 });
 
 export let config = JSON.parse(fs.readFileSync(process.env.CONFIG_PATH!, 'utf-8'));
@@ -122,24 +131,24 @@ client.on('messageCreate', async (message) => {
     }
     
     try {
-        if(message.type == MessageType.Reply) {
-            const replyParent = await message.channel.messages.cache.get(message.reference!.messageId!)!;
-
-            if(
-                replyParent.author.id === '1027714339169374300' // Main Bot
-                || replyParent.author.id === '1027424058297552937' // Debug Bot
-            ) {
-                user['context_list'].push(message.content);
+        if(process.env.NODE_ENV !== 'development') {
+            if(message.type == MessageType.Reply) {
+                const replyParent = await message.channel.messages.cache.get(message.reference!.messageId!)!;
+    
+                if(replyParent.author.id === client.user!.id) {
+                    user['context_list'].push(message.content);
+                    const cleverResponse = await cleverbot(message.content, user['context_list']);
+                    user['context_list'].push(cleverResponse);
+        
+                    message.reply(cleverResponse);
+                }
+            } else if(message.content.startsWith(`<@${client.user!.id}>`)) {
+                user['context_list'].push(message.content.slice(2 + message.author.id.length + 3)); // Remove the beginning "<@id> "
                 const cleverResponse = await cleverbot(message.content, user['context_list']);
                 user['context_list'].push(cleverResponse);
-    
+                
                 message.reply(cleverResponse);
             }
-        } else if(message.content.startsWith(`<@${client.user!.id}>`)) {
-            user['context_list'].push(message.content.slice(2 + message.author.id.length + 3)); // Remove the beginning "<@id> "
-            const cleverResponse = await cleverbot(message.content, user['context_list']);
-            
-            message.reply(cleverResponse);
         }
     } catch (err) {
         message.reply('😓 Sorry, I couldn\'t figure out what to say. Try again!')
@@ -194,7 +203,7 @@ client.on('messageCreate', async (message) => {
     }
 
     // Triggers
-    const trigger = config['triggers'].filter((e: any) => e.trigger.includes(message.content.toLowerCase()))[0];
+    const trigger = config['triggers'].filter((e: any) => e.trigger === message.content)[0];
     
     if(trigger != null) {
         try {
@@ -249,6 +258,27 @@ client.on('guildMemberAdd', async (member) => {
         } else {
             const channel = guild!.channels.cache.get(config['welcome']['channel']) as TextChannel;
             channel.send(await replaceOptions(config['welcome']['message'], member, guild));
+        }
+    }
+});
+
+client.on('guildMemberRemove', async (member) => {
+    if(member.user.bot) return;
+    const guild = client.guilds.cache.get(process.env.GUILD_ID!) as Guild;
+
+    if(config['goodbye']['enabled']) {
+        if(config['goodbye']['channel'] == 'dm') {
+            try {
+                member.send(await replaceOptions(config['goodbye']['message'], member, guild));
+            } catch (err) {
+                console.log(
+                    `Unable to DM ${member.user.username}`
+                    + '\n↳' + err
+                );
+            }
+        } else {
+            const channel = guild!.channels.cache.get(config['goodbye']['channel']) as TextChannel;
+            channel.send(await replaceOptions(config['goodbye']['message'], member, guild));
         }
     }
 });
