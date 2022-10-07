@@ -7,7 +7,7 @@ import fs from 'fs';
 export default {
     data: new SlashCommandBuilder()
         .setName('config')
-        .setDescription('[Utilities] Access the server config (`Administrator` permission required)')
+        .setDescription('Access the server config (`Administrator` permission required)')
 
         // Welcome message
         .addSubcommand(sub => 
