@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon --watch \"src/**\" --ext \"ts,json\" --ignore \"src/**/*.spec.ts\" --ignore \"src/config.json\" --exec \"ts-node src/index.ts\""
+    "start": "nodemon --watch \"src/**\" --ext \"ts,json\" --ignore \"src/**/*.spec.ts\" --ignore \"src/config.json\" --ignore \"src/clever.json\" --exec \"ts-node src/index.ts\""
   },
   "license": "MIT",
   "dependencies": {
