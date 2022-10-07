@@ -4,8 +4,9 @@ import 'dotenv/config';
 import fs from 'fs';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
-import Discord, { Collection, TextChannel, GuildMember, Interaction, ActivityType, GatewayIntentBits, Guild, EmbedBuilder } from 'discord.js';
+import Discord, { Collection, TextChannel, GuildMember, Interaction, ActivityType, GatewayIntentBits, Guild, EmbedBuilder, MessageType } from 'discord.js';
 import replaceOptions from './utils/replaceOptions';
+import cleverbot from 'cleverbot-free';
 import chokidar from 'chokidar';
 import path from 'path';
 
@@ -106,6 +107,17 @@ client.on('interactionCreate', async (interaction: any) => {
 client.on('messageCreate', async (message) => {
     if(message.author.bot) return;
 
+    if(message.type == MessageType.Reply) {
+        const replyParent = await message.channel.messages.cache.get(message.reference!.messageId!)!;
+        if(
+            replyParent.author.id === '1027714339169374300' // Main Bot
+            || replyParent.author.id === '1027424058297552937' // Debug Bot
+        ) {
+            const cleverResponse = await cleverbot(message.content, [replyParent.content]);
+            message.reply(cleverResponse);
+        }
+    }
+
     // Commands
     if(message.content.startsWith(config['prefix'])) {
         const args_cmd = message.content.trim().split(/ +/g);
@@ -146,12 +158,6 @@ client.on('messageCreate', async (message) => {
                     return;
                 }
 
-                try {
-                    await message.delete();
-                } catch (err) {
-                    message.channel.send('⚠ Cannot delete echo message due to 2FA being enabled');
-                }
-
                 message.reply(`${args.join(' ')}\n\nℹ Message sent from ${message.author}`)
                 break;
             
@@ -164,7 +170,7 @@ client.on('messageCreate', async (message) => {
     const trigger = config['triggers'].filter((e: any) => e.trigger == message.content)[0];
     
     if(trigger != null && message.content.includes(trigger['trigger'])) {
-        message.reply(trigger['response']);
+        message.reply(await replaceOptions(trigger['response'], message.member, message.guild));
 
         if(trigger['delete']) {
             if(!message.deletable) {

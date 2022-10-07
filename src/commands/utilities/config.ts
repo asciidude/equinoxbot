@@ -56,9 +56,38 @@ export default {
         // Triggers
         .addSubcommand(sub => 
             sub
-                .setName('trigger')
+                .setName('add_trigger')
                 .setDescription('A list of trigger-words to reply to')
-                
+                .addStringOption(opt =>
+                    opt
+                        .setName('trigger')
+                        .setDescription('The trigger message')
+                        .setRequired(true)
+                )
+                .addStringOption(opt =>
+                    opt
+                        .setName('response')
+                        .setDescription('The reponse to the message')
+                        .setRequired(true)
+                )
+                .addBooleanOption(opt =>
+                    opt
+                        .setName('delete')
+                        .setDescription('Enable/disable deletion of the message')
+                        .setRequired(true)
+                )
+        )
+
+        .addSubcommand(sub => 
+            sub
+                .setName('remove_trigger')
+                .setDescription('Remove a trigger by ID')
+                .addIntegerOption(opt =>
+                    opt
+                        .setName('id')
+                        .setDescription('The trigger message ID to remove')
+                        .setRequired(true)
+                )
         )
 
         // Prefix
@@ -82,8 +111,15 @@ export default {
                 .addStringOption(opt =>
                     opt
                         .setName('option')
-                        .setDescription('Available: welcome, autorole, prefix')
+                        .setDescription('The option to use')
                         .setRequired(true)
+
+                        .addChoices(
+                            { name: '🙋 Welcome Configuration', value: 'welcome' },
+                            { name: '🦺 Auto-role Configuration', value: 'autorole' },
+                            { name: '👂 View Prefix', value: 'prefix' },
+                            { name: '💬 View Triggers', value: 'triggers' },
+                        )
                 )
         )
 
@@ -100,6 +136,9 @@ export default {
         });
 
         switch(interaction.options.getSubcommand()) {
+            /////////////
+            // Welcome //
+            /////////////
             case 'welcome':
                 if(interaction.options.getString('message').toLowerCase() == 'disable') {
                     config['welcome']['enabled'] = false;
@@ -144,6 +183,9 @@ export default {
 
                 break;
             
+            ///////////////
+            // Auto-Role //
+            ///////////////
             case 'autorole':
                 if(!interaction.options.getBoolean('enabled')) {
                     config['autoRole']['enabled'] = false;
@@ -174,6 +216,9 @@ export default {
 
                 break;
 
+            ////////////
+            // Prefix //
+            ////////////
             case 'prefix':
                 config['prefix'] = interaction.options.getString('prefix');
                 fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
@@ -185,6 +230,45 @@ export default {
 
                 break;
 
+            //////////////
+            // Triggers //
+            //////////////
+            case 'add_trigger':
+                config['triggers'].push({
+                    "trigger": interaction.options.getString('trigger'),
+                    "response": interaction.options.getString('response'),
+                    "delete": interaction.options.getBoolean('delete'),
+                    "id": Date.now()
+                });
+
+                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+    
+                interaction.reply({
+                    content: `Added trigger \`${interaction.options.getString('trigger')}\`, check with \`/config triggers\``,
+                    ephemeral: true
+                });
+    
+                break;
+            
+            case 'remove_trigger':
+                for (let i = 0; i < config['triggers'].length; i++) {
+                    if (config['triggers'][i].id == interaction.options.getInteger('id')) {
+                        config['triggers'].splice(i, 1);
+                    }
+                }
+    
+                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+        
+                interaction.reply({
+                    content: `Removed trigger \`${interaction.options.getInteger('id')}\``,
+                    ephemeral: true
+                });
+    
+                break;
+
+            //////////
+            // Test //
+            //////////
             case 'test':
                 switch(interaction.options.getString('option').toLowerCase()) {
                     case 'welcome':
@@ -212,25 +296,52 @@ export default {
 
                     case 'prefix':
                         interaction.reply({
-                            content: `Prefix: \`${config['prefix']}\``,
+                            content: `This server's prefix is \`${config['prefix']}\``,
                             ephemeral: true
                         });
         
                         break;
+                    
+                    
+                    case 'triggers':
+                        if(config['triggers'].length <= 0) {
+                            interaction.reply({
+                                content: '⚠ No triggers found',
+                                ephemeral: true
+                            });
 
-                    default:
+                            break;
+                        }
+
+                        let triggers_list = '';
+                            
+                        for (let i = 0; i < config['triggers'].length; i++) {
+                            let obj = config['triggers'][i];
+
+                            triggers_list
+                            += `**Trigger:** ${obj['trigger']}`
+                            + `\n**Response:** ${obj['response']}`
+                            + `\n**Delete Message:** ${obj['delete'] === true ? '✅' : '⛔'}`
+                            + `\n**Trigger ID:** \`${obj['id']}\``
+                            + `\n\n`;
+                        }
+                    
                         interaction.reply({
-                            content: 'That option doesn\'t exist! Please use one from the list in the command description',
-                            ephermal: true
-                        })
-
+                            content: triggers_list,
+                            ephemeral: true
+                        });
+    
                         break;
                 }
 
                 break;
 
+            //////////////////
+            // End of Tests //
+            //////////////////
+
             case 'get_options':
-                const embed = new EmbedBuilder()
+                const optionsEmbed = new EmbedBuilder()
                     .setTitle('Config Options')
                     .addFields(
                         {
@@ -254,7 +365,7 @@ export default {
                     .setTimestamp();
     
                 interaction.reply({
-                    embeds: [embed],
+                    embeds: [optionsEmbed],
                     content: `⚠ Options are surrounded in curly braces (like this: {CATEGORY.OPTION}), also keep in mind that the options are case sensitive` +
                              '\nUse \\n to make a new line if you need!',
                     ephemeral: false

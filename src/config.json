@@ -2,8 +2,8 @@
     "prefix": ";",
     "welcome": {
         "enabled": true,
-        "message": "Welcome to {GUILD.NAME}, {USER.MENTION}!",
-        "channel": "1026300571323473983"
+        "message": "Welcome to {GUILD.NAME}, {USER.NAME}!",
+        "channel": "1027379406735421440"
     },
     "autoRole": {
         "enabled": false,
@@ -11,10 +11,10 @@
     },
     "triggers": [
         {
-            "trigger": "test",
-            "response": "wow it works",
-            "delete": false
+            "trigger": "hi",
+            "response": "hi",
+            "delete": false,
+            "id": 1665164002556
         }
-    ],
-    "blacklistedWords": []
+    ]
 }
