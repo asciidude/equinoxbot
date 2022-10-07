@@ -104,7 +104,6 @@ client.on('interactionCreate', async (interaction: any) => {
     }
 });
 
-let context: string[] = []; // Instance-dependent contexts :D
 client.on('messageCreate', async (message) => {
     if(message.author.bot) return;
 
@@ -115,17 +114,11 @@ client.on('messageCreate', async (message) => {
             replyParent.author.id === '1027714339169374300' // Main Bot
             || replyParent.author.id === '1027424058297552937' // Debug Bot
         ) {
-            context.push(message.content);
-            const cleverResponse = await cleverbot(message.content, context);
-            context.push(cleverResponse);
-
+            const cleverResponse = await cleverbot(message.content, [replyParent.content]);
             message.reply(cleverResponse);
         }
     } else if(message.content.startsWith(`<@${client.user!.id}>`)) {
-        context.push(message.content.slice(2 + message.author.id.length + 3)); // Remove the beginning "<@id> "
-        const cleverResponse = await cleverbot(message.content, context);
-        context.push(cleverResponse);
-        
+        const cleverResponse = await cleverbot(message.content.slice(2 + message.author.id.length + 3));
         message.reply(cleverResponse);
     }
 
