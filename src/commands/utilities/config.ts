@@ -244,7 +244,7 @@ export default {
                 fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
     
                 interaction.reply({
-                    content: `Added trigger \`${interaction.options.getString('trigger')}\`, check with \`/config triggers\``,
+                    content: `Added trigger \`${interaction.options.getString('trigger')}\`, check with \`/config test\``,
                     ephemeral: true
                 });
     
