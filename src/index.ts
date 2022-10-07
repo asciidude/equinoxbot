@@ -197,7 +197,14 @@ client.on('messageCreate', async (message) => {
     const trigger = config['triggers'].filter((e: any) => e.trigger.includes(message.content.toLowerCase()))[0];
     
     if(trigger != null) {
-        message.reply(await replaceOptions(trigger['response'], message.member, message.guild));
+        try {
+            message.reply(await replaceOptions(trigger['response'], message.member, message.guild));
+        } catch(err) {
+            console.log(
+                `Unable to send message`
+                + '\n↳' + err
+            );
+        }
 
         if(trigger['delete']) {
             if(!message.deletable) {
