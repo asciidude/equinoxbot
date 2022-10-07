@@ -196,7 +196,7 @@ client.on('messageCreate', async (message) => {
     // Triggers
     const trigger = config['triggers'].filter((e: any) => e.trigger == message.content)[0];
     
-    if(trigger != null && message.content.includes(trigger['trigger'])) {
+    if(trigger != null && message.content.toLowerCase().includes(trigger['trigger'].toLowerCase())) {
         message.reply(await replaceOptions(trigger['response'], message.member, message.guild));
 
         if(trigger['delete']) {
