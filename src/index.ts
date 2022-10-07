@@ -117,11 +117,15 @@ client.on('messageCreate', async (message) => {
         ) {
             context.push(message.content);
             const cleverResponse = await cleverbot(message.content, context);
+            context.push(cleverResponse);
+
             message.reply(cleverResponse);
         }
     } else if(message.content.startsWith(`<@${client.user!.id}>`)) {
         context.push(message.content.slice(2 + message.author.id.length + 3)); // Remove the beginning "<@id> "
         const cleverResponse = await cleverbot(message.content, context);
+        context.push(cleverResponse);
+        
         message.reply(cleverResponse);
     }
 
