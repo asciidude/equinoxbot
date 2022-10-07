@@ -4,7 +4,7 @@ import 'dotenv/config';
 import fs from 'fs';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
-import Discord, { Collection, TextChannel, GuildMember, Interaction, ActivityType, GatewayIntentBits, Guild } from 'discord.js';
+import Discord, { Collection, TextChannel, GuildMember, Interaction, ActivityType, GatewayIntentBits, Guild, EmbedBuilder } from 'discord.js';
 import replaceOptions from './utils/replaceOptions';
 import chokidar from 'chokidar';
 import path from 'path';
@@ -24,10 +24,10 @@ const client = new Discord.Client({
     ]
 });
 
-let config = JSON.parse(fs.readFileSync(process.env.CONFIG_PATH!, 'utf-8'));
+export let config = JSON.parse(fs.readFileSync(process.env.CONFIG_PATH!, 'utf-8'));
 
 // Config Watch
-chokidar.watch(process.env.CONFIG_PATH!).on('change', (event, path) => {
+chokidar.watch(process.env.CONFIG_PATH!).on('change', (path: string) => {
     config = JSON.parse(fs.readFileSync(process.env.CONFIG_PATH!, 'utf-8'));
 });
 
@@ -105,6 +105,60 @@ client.on('interactionCreate', async (interaction: any) => {
 
 client.on('messageCreate', async (message) => {
     if(message.author.bot) return;
+
+    // Commands
+    if(message.content.startsWith(config['prefix'])) {
+        const args_cmd = message.content.trim().split(/ +/g);
+        
+        const cmd = args_cmd[0].slice(config['prefix'].length).toLowerCase();
+        const args = args_cmd.slice(config['prefix'].length);
+
+        switch(cmd) {
+            case 'help':
+                const helpEmbed = new EmbedBuilder()
+                    .setTitle('Commands')
+                    .addFields(
+                        {
+                            name: 'General Usage',
+                            value: `\`${config['prefix']}help\` Access this embed`,
+                            inline: true
+                        },
+                        {
+                            name: 'Fun Commands',
+                            value: `\`${config['prefix']}echo <message>\` Repeat your message`,
+                            inline: true
+                        }
+                    )
+                    .setColor('Blurple')
+                    .setThumbnail(process.env.ICON_URL!)
+                    .setFooter({ text: message.author.username, iconURL: message.author.avatarURL()! })
+                    .setTimestamp();
+                
+                message.reply({
+                    embeds: [helpEmbed]
+                })
+
+                break;
+
+            case 'echo':
+                if(!args[0]) {
+                    message.reply(`⚠ Incorrect usage, please use: \`${config['prefix']}echo <message>\``);
+                    return;
+                }
+
+                try {
+                    await message.delete();
+                } catch (err) {
+                    message.channel.send('⚠ Cannot delete echo message due to 2FA being enabled');
+                }
+
+                message.reply(`${args.join(' ')}\n\nℹ Message sent from ${message.author}`)
+                break;
+            
+            default:
+                message.reply('⚠ Command not found');
+        }
+    }
 
     // Triggers
     const trigger = config['triggers'].filter((e: any) => e.trigger == message.content)[0];

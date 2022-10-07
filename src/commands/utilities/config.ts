@@ -1,9 +1,8 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import replaceOptions from '../../utils/replaceOptions';
+import { config } from '../..';
 import fs from 'fs';
-
-const config = JSON.parse(fs.readFileSync(process.env.CONFIG_PATH!, 'utf-8'));
 
 export default {
     data: new SlashCommandBuilder()
@@ -58,7 +57,21 @@ export default {
         .addSubcommand(sub => 
             sub
                 .setName('trigger')
-                .setDescription('A list of trigger-words to reply to')    
+                .setDescription('A list of trigger-words to reply to')
+                
+        )
+
+        // Prefix
+        .addSubcommand(sub => 
+            sub
+                .setName('prefix')
+                .setDescription('Set the bot prefix for text-commands')
+                .addStringOption(opt =>
+                    opt
+                        .setName('prefix')
+                        .setDescription('The prefix to use')
+                        .setRequired(true)
+                )
         )
 
         // Test config
@@ -69,7 +82,7 @@ export default {
                 .addStringOption(opt =>
                     opt
                         .setName('option')
-                        .setDescription('Available: welcome, autorole')
+                        .setDescription('Available: welcome, autorole, prefix')
                         .setRequired(true)
                 )
         )
@@ -161,6 +174,17 @@ export default {
 
                 break;
 
+            case 'prefix':
+                config['prefix'] = interaction.options.getString('prefix');
+                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+
+                interaction.reply({
+                    content: `✅ Set the server's prefix to \`${interaction.options.getString('prefix')}\``,
+                    ephemeral: true
+                })
+
+                break;
+
             case 'test':
                 switch(interaction.options.getString('option').toLowerCase()) {
                     case 'welcome':
@@ -181,7 +205,17 @@ export default {
                                      `\nRole: ${'<@&' + config['autoRole']['role'] + '>' || 'none'}`,
                             ephemeral: true
                         });
-    
+        
+                        break;
+                    
+                    
+
+                    case 'prefix':
+                        interaction.reply({
+                            content: `Prefix: \`${config['prefix']}\``,
+                            ephemeral: true
+                        });
+        
                         break;
 
                     default:
@@ -216,7 +250,7 @@ export default {
                     )
                     .setColor('Blurple')
                     .setThumbnail(process.env.ICON_URL!)
-                    .setFooter({ text: interaction.member.user.username, iconURL: interaction.member.user.avatarURL() })
+                    .setFooter({ text: interaction.member.user.username, iconURL: interaction.member.user.avatarURL()! })
                     .setTimestamp();
     
                 interaction.reply({
