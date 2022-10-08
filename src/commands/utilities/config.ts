@@ -1,13 +1,15 @@
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import replaceOptions from '../../utils/replaceOptions';
+import findPermission from '../../utils/findPermission';
 import { config } from '../..';
 import fs from 'fs';
+import commandExists from '../../utils/commandExists';
 
 export default {
     data: new SlashCommandBuilder()
         .setName('config')
-        .setDescription('Access the server config (`Administrator` permission required)')
+        .setDescription('Access the server config')
 
         // Welcome message
         .addSubcommand(sub => 
@@ -128,6 +130,55 @@ export default {
                 )
         )
 
+        // Permissions
+        .addSubcommand(sub => 
+            sub
+                .setName('rm_permissions_req')
+                .setDescription('Remove permission requirement from a command')
+                .addStringOption(opt =>
+                    opt
+                        .setName('command')
+                        .setDescription('The command to change (do not include the /)')
+                        .setRequired(true)
+                )
+        )
+
+        .addSubcommand(sub => 
+            sub
+                .setName('set_admin_override')
+                .setDescription('Set the admin override for a command')
+                .addStringOption(opt =>
+                    opt
+                        .setName('command')
+                        .setDescription('The command to change (do not include the /)')
+                        .setRequired(true)
+                )
+                .addBooleanOption(opt =>
+                    opt
+                        .setName('enabled')
+                        .setDescription('Enable/disable the admin override')
+                        .setRequired(true)
+                )
+        )
+
+        .addSubcommand(sub => 
+            sub
+                .setName('set_permission_role')
+                .setDescription('Add/remove a role permission for a command')
+                .addStringOption(opt =>
+                    opt
+                        .setName('command')
+                        .setDescription('The command to change (do not include the /)')
+                        .setRequired(true)
+                )
+                .addRoleOption(opt =>
+                    opt
+                        .setName('role')
+                        .setDescription('The role to add or remove to the permissions for the command')
+                        .setRequired(true)
+                )
+        )
+
         // Test config
         .addSubcommand(sub => 
             sub
@@ -156,12 +207,132 @@ export default {
                 .setDescription('Get the available options for messages (like {USER.MENTION})')
         ),
     execute: async (interaction: any) => {
-        if(interaction.member.id !== '801469073535139860' && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) return interaction.reply({
-            content: 'You need the `Administrator` permission to run this command',
-            ephemeral: true
-        });
+        let permission;
+
+        if(interaction.options.getString('command')) {
+            permission = await findPermission(interaction.options.getString('command'));
+        }
 
         switch(interaction.options.getSubcommand()) {
+            /////////////////
+            // Permissions //
+            /////////////////
+            case 'rm_permissions_req':
+                if(!permission) {
+                    interaction.reply({
+                        content: `⛔ Unable to find permissions for \`${interaction.options.getString('command')}\``,
+                        ephemeral: true
+                    });
+
+                    break;
+                }
+
+                for (let i = 0; i < config['permissions'].length; i++) {
+                    if (config['permissions'][i].commandName == interaction.options.getString('command')) {
+                        config['permissions'].splice(i, 1);
+                    }
+                }
+
+                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+
+                interaction.reply({
+                    content: `Removed permissions requirement from \`${interaction.options.getString('command')}\``,
+                    ephemeral: true
+                });
+
+                break;
+                
+            case 'set_admin_override':
+                if(!permission) {
+                    if(await commandExists(interaction.options.getString('command'))) {
+                        config['permissions'].push({
+                            commandName: interaction.options.getString('command'),
+                            roles: [],
+                            administratorOverride: interaction.options.getBoolean('enabled')
+                        });
+
+                        fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+
+                        interaction.reply({
+                            content: `Set administrator override for \`${interaction.options.getString('command')}\` to \`${interaction.options.getBoolean('enabled')}\``,
+                            ephemeral: true
+                        });
+
+                        break;
+                    } else {
+                        interaction.reply({
+                            content: `⛔ Unable to find command \`${interaction.options.getString('command')}\``,
+                            ephemeral: true
+                        });
+        
+                        break;
+                    }
+                }
+
+                permission['administratorOverride'] = interaction.options.getBoolean('enabled');
+                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+
+                interaction.reply({
+                    content: `Set administrator override for \`${interaction.options.getString('command')}\` to \`${permission['administratorOverride']}\``,
+                    ephemeral: true
+                });
+
+                break;
+                
+            case 'set_permission_role':
+                if(!permission) {
+                    if(await commandExists(interaction.options.getString('command'))) {
+                        config['permissions'].push({
+                            commandName: interaction.options.getString('command'),
+                            roles: [interaction.options.getRole('role').id],
+                            administratorOverride: true
+                        });
+
+                        fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+
+                        interaction.reply({
+                            content: `Added permissions for ${interaction.options.getRole('role')} to \`${interaction.options.getString('command')}\``,
+                            ephemeral: true
+                        });
+
+                        break;
+                    } else {
+                        interaction.reply({
+                            content: `⛔ Unable to find command \`${interaction.options.getString('command')}\``,
+                            ephemeral: true
+                        });
+        
+                        break;
+                    }
+                }
+                    
+                let addedRolePerm = false;
+
+                if(!permission['roles'].includes(interaction.options.getRole('role').id)) {
+                    permission['roles'].push(interaction.options.getRole('role').id);
+                    addedRolePerm = true;
+                } else {
+                    for (let i = 0; i < permission['roles'].length; i++) {
+                        if(permission['roles'][i] == interaction.options.getRole('role').id) {
+                            permission['roles'].splice(i, 1);
+                        }
+                    }
+
+                    addedRolePerm = false;
+                }
+
+                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+
+                interaction.reply({
+                    content: `${addedRolePerm ? 'Added' : 'Removed'}` + 
+                             ` permissions for ${interaction.options.getRole('role')}`
+                             + ` ${addedRolePerm ? 'to' : 'from'}` +
+                             ` \`${interaction.options.getString('command')}\``,
+                    ephemeral: true
+                });
+
+                break;
+
             /////////////
             // Welcome //
             /////////////
@@ -207,7 +378,9 @@ export default {
                     });
                 }
 
-                break;/////////////
+                break;
+            
+            /////////////
             // Welcome //
             /////////////
             case 'welcome':

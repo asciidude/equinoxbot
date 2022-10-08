@@ -16,7 +16,7 @@ declare module 'discord.js' {
     }
 }
 
-const client = new Discord.Client({
+export const client = new Discord.Client({
     intents: [
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.Guilds,
@@ -47,6 +47,8 @@ export let config = JSON.parse(fs.readFileSync(process.env.CONFIG_PATH!, 'utf-8'
 chokidar.watch(process.env.CONFIG_PATH!).on('change', (path: string) => {
     config = JSON.parse(fs.readFileSync(process.env.CONFIG_PATH!, 'utf-8'));
 });
+
+import hasPermission from './utils/hasPermission';
 
 // Initialize command handler
 const recursive = function(dir: string, arr: any) {
@@ -104,6 +106,13 @@ client.once('ready', async () => {
 client.on('interactionCreate', async (interaction: any) => {
     if(interaction.isCommand() == false) return;
 
+    if(!(await hasPermission(interaction.commandName, interaction.member))) {
+        return interaction.reply({
+            content: '⛔ You do not have permission to use this command!',
+            ephemeral: true
+        });
+    }
+
     const command = client.commands.get(interaction.commandName);
     if(!command) return interaction.reply({
         content: 'Command not found, contact the host to let them know they\'re running two instances of me!',
@@ -116,7 +125,7 @@ client.on('interactionCreate', async (interaction: any) => {
         if(err) console.log(err);
         else console.log(`Failed to execute slash command (${interaction.commandName}), no error provided`);
 
-        interaction.channel!.send(`Error in command \`${interaction.commandName}\`! <@801469073535139860>, please have a look at my code!`);
+        interaction.channel!.send(`Error in command \`${interaction.commandName}\`! <@${process.env.DEVELOPER_ID}>, please have a look at my code!`);
     }
 });
 
