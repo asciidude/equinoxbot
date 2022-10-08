@@ -12,8 +12,10 @@ export default {
             mature: false,
         });
 
+        const random = Math.floor(Math.random() * res['data'].length);
+
         interaction.reply({
-            content: res['data'][0]['link'],
+            content: res['data'][random]['link'],
             ephemeral: false
         })
     }
