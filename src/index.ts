@@ -25,6 +25,13 @@ const client = new Discord.Client({
     ]
 });
 
+import { ImgurClient } from 'imgur';
+export const imgur = new ImgurClient({
+    clientId: process.env.IMGUR_ID,
+    clientSecret: process.env.IMGUR_SECRET,
+    //refreshToken: process.env.IMGUR_REFRESH_TOKEN
+});
+
 const tenor = require('tenorjs');
 export const Tenor = tenor.client({
     "Key": process.env.TENOR_API_KEY!,
