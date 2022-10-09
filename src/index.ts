@@ -318,8 +318,3 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
-
-const ON_DEATH = require('death');
-ON_DEATH((signal: any, err: any) => {
-    clearInterval(presenceInterval);
-});
