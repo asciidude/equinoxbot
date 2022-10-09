@@ -17,6 +17,6 @@ export default {
         interaction.reply({
             content: res['data'][random]['link'],
             ephemeral: false
-        })
+        });
     }
 }

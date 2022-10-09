@@ -25,6 +25,7 @@ export const client = new Discord.Client({
     ]
 });
 
+// Imgur
 import { ImgurClient } from 'imgur';
 export const imgur = new ImgurClient({
     clientId: process.env.IMGUR_ID,
@@ -32,6 +33,7 @@ export const imgur = new ImgurClient({
     //refreshToken: process.env.IMGUR_REFRESH_TOKEN
 });
 
+// Tenor
 const tenor = require('tenorjs');
 export const Tenor = tenor.client({
     "Key": process.env.TENOR_API_KEY!,
@@ -103,31 +105,35 @@ client.once('ready', async () => {
     })();
 });
 
-client.on('interactionCreate', async (interaction: any) => {
-    if(interaction.isCommand() == false) return;
-
-    if(!(await hasPermission(interaction.commandName, interaction.member))) {
-        return interaction.reply({
-            content: '⛔ You do not have permission to use this command!',
+try {
+    client.on('interactionCreate', async (interaction: any) => {
+        if(interaction.isCommand() == false) return;
+    
+        if(!(await hasPermission(interaction.commandName, interaction.member))) {
+            return interaction.reply({
+                content: '⛔ You do not have permission to use this command!',
+                ephemeral: true
+            });
+        }
+    
+        const command = client.commands.get(interaction.commandName);
+        if(!command) return interaction.reply({
+            content: 'Command not found, contact the host to let them know they\'re running two instances of me!',
             ephemeral: true
         });
-    }
-
-    const command = client.commands.get(interaction.commandName);
-    if(!command) return interaction.reply({
-        content: 'Command not found, contact the host to let them know they\'re running two instances of me!',
-        ephemeral: true
+    
+        try {
+            await command.execute(interaction);
+        } catch(err) {
+            if(err) console.log(err);
+            else console.log(`Failed to execute slash command (${interaction.commandName}), no error provided`);
+    
+            interaction.channel!.send(`Error in command \`${interaction.commandName}\`! <@${process.env.DEVELOPER_ID}>, please have a look at my code!`);
+        }
     });
-
-    try {
-        await command.execute(interaction);
-    } catch(err) {
-        if(err) console.log(err);
-        else console.log(`Failed to execute slash command (${interaction.commandName}), no error provided`);
-
-        interaction.channel!.send(`Error in command \`${interaction.commandName}\`! <@${process.env.DEVELOPER_ID}>, please have a look at my code!`);
-    }
-});
+} catch(err) {
+    console.log(err);
+}
 
 let context: any[] = []; // Instance-dependent contexts :D
 client.on('messageCreate', async (message) => {
