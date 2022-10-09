@@ -1,10 +1,9 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
-import { PermissionFlagsBits, EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import replaceOptions from '../../utils/replaceOptions';
 import findPermission from '../../utils/findPermission';
+import commandExists from '../../utils/commandExists';
 import { config } from '../..';
 import fs from 'fs';
-import commandExists from '../../utils/commandExists';
 
 export default {
     data: new SlashCommandBuilder()

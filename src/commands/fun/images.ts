@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from '@discordjs/builders';
+import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import ddgi from 'duckduckgo-images-api';
 
 export default {
@@ -21,11 +21,23 @@ export default {
             });
 
             const random = Math.floor(Math.random() * res.length);
+            const image = res[random]['image'];
+
+            const embed = new EmbedBuilder()
+                .setTitle('📸 Snap!')
+                .setDescription(`**Source:** ${image}`
+                              + `\n**Search Terms:** ${interaction.options.getString('query')}`
+                              + `\n**Requested by:** ${interaction.member}`)
+                .setColor('Blurple')
+                .setFooter({
+                    text: interaction.member!.displayName,
+                    iconURL: interaction.member!.user.avatarURL()!
+                })
+                .setImage(image)
+                .setTimestamp()
     
             interaction.reply({
-                content: `**Source:** ${res[random]['image']}`
-                       + `\n**Search Terms:** ${interaction.options.getString('query')}`
-                       + `\n**Requested by:** ${interaction.member}`,
+                embeds: [embed],
                 ephemeral: false
             });
         } catch (err) {

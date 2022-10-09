@@ -4,7 +4,7 @@ import 'dotenv/config';
 import fs from 'fs';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
-import Discord, { Collection, TextChannel, GuildMember, Interaction, ActivityType, GatewayIntentBits, Guild, EmbedBuilder, MessageType } from 'discord.js';
+import Discord, { Collection, TextChannel, GuildMember, Interaction, ActivityType, GatewayIntentBits, Guild, EmbedBuilder, MessageType, ChannelType } from 'discord.js';
 import replaceOptions from './utils/replaceOptions';
 import cleverbot from 'cleverbot-free';
 import chokidar from 'chokidar';
@@ -13,6 +13,8 @@ import path from 'path';
 declare module 'discord.js' {
     export interface Client {
         commands: Collection<unknown, any>
+        textCommands: Collection<unknown, any>
+        textAliases: Collection<unknown, any>
     }
 }
 
@@ -67,19 +69,39 @@ const recursive = function(dir: string, arr: any) {
     return arr;
 }
 
+// Slash Commands
 const commandFiles: String[] = recursive(`${__dirname}/commands`, []).filter((f: any) => f.endsWith('.ts'));
 const commands: Object[] = [];
 client.commands = new Collection();
 
 for (const file of commandFiles) {
     let command = require(file as string);
-    if (command.default) command = command.default;
+    if(command.default) command = command.default;
 
     commands.push(command.data.toJSON());
     client.commands.set(command.data.name, command);
 }
 
-let presenceInterval: any;
+// Text Commands
+const textCommandFiles: String[] = recursive(`${__dirname}/textCommands`, []).filter((f: any) => f.endsWith('.ts'));
+const textCommands: Object[] = [];
+client.textCommands = new Collection();
+client.textAliases = new Collection();
+
+for (const file of textCommandFiles) {
+    let command = require(file as string);
+    if(command.default) command = command.default;
+
+    if(command.aliases) {
+        for(const alias of command.aliases) {
+            client.textAliases.set(alias, command);
+        }
+    }
+
+    textCommands.push(command);
+    client.textCommands.set(command.name, command);
+}
+
 client.once('ready', async () => {
     console.log(`${client.user!.username} is now ready!`);
     const guild = client.guilds.cache.get(process.env.GUILD_ID!)!;
@@ -89,7 +111,7 @@ client.once('ready', async () => {
         status: 'dnd'
     });
 
-    presenceInterval = setInterval(() => {
+    setInterval(() => {
         client.user!.setPresence({
             activities: [{ name: `over ${guild.memberCount} users`, type: ActivityType.Watching }],
             status: 'dnd'
@@ -146,8 +168,31 @@ try {
 }
 
 let context: any[] = []; // Instance-dependent contexts :D
-client.on('messageCreate', async (message) => {
-    if(message.author.bot) return;
+client.on('messageCreate', async (message: any) => {
+    if(message.author.bot && message.channel.type != ChannelType.DM) return;
+
+    const args_cmd = message.content.trim().split(/ +/g);
+    
+    const cmd = args_cmd[0].slice(config['prefix'].length).toLowerCase();
+    const args = args_cmd.slice(config['prefix'].length);
+
+    if(!message.content.startsWith(config['prefix'])) return;
+
+    if(!(await hasPermission(cmd, message.member!))) {
+        return message.reply('⛔ You do not have permission to use this command!');
+    }
+
+    const textCommand = client.textCommands.get(cmd) || client.textAliases.get(cmd);
+    if(!textCommand) return message.reply('⚠ Command not found');
+
+    try {
+        await textCommand.execute(message, args, client);
+    } catch(err) {
+        if(err) console.log(err);
+        else console.log(`Failed to execute text command (${cmd}), no error provided`);
+
+        message.channel!.send(`Error in text command \`${cmd}\`! <@${process.env.DEVELOPER_ID}>, please have a look at my code!`);
+    }
 
     // Cleverbot
     if(message.channel.id == config['cleverbot']['channel']) {
@@ -185,54 +230,6 @@ client.on('messageCreate', async (message) => {
             }
         } catch (err) {
             message.reply('😓 Sorry, I couldn\'t figure out what to say. Try again!')
-        }
-    }
-
-    // Commands
-    if(message.content.startsWith(config['prefix'])) {
-        const args_cmd = message.content.trim().split(/ +/g);
-        
-        const cmd = args_cmd[0].slice(config['prefix'].length).toLowerCase();
-        const args = args_cmd.slice(config['prefix'].length);
-
-        switch(cmd) {
-            case 'help':
-                const helpEmbed = new EmbedBuilder()
-                    .setTitle('Commands')
-                    .addFields(
-                        {
-                            name: 'General Usage',
-                            value: `\`${config['prefix']}help\` Access this embed`,
-                            inline: true
-                        },
-                        {
-                            name: 'Fun Commands',
-                            value: `\`${config['prefix']}echo <message>\` Repeat your message`,
-                            inline: true
-                        }
-                    )
-                    .setColor('Blurple')
-                    .setThumbnail(process.env.ICON_URL!)
-                    .setFooter({ text: message.author.username, iconURL: message.author.avatarURL()! })
-                    .setTimestamp();
-                
-                message.reply({
-                    embeds: [helpEmbed]
-                })
-
-                break;
-
-            case 'echo':
-                if(!args[0]) {
-                    message.reply(`⚠ Incorrect usage, please use: \`${config['prefix']}echo <message>\``);
-                    return;
-                }
-
-                message.reply(`${args.join(' ')}\n\nℹ Message sent from ${message.author}`)
-                break;
-            
-            default:
-                message.reply('⚠ Command not found');
         }
     }
 
