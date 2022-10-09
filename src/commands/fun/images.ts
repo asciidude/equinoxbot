@@ -4,7 +4,7 @@ import ddgi from 'duckduckgo-images-api';
 export default {
     data: new SlashCommandBuilder()
         .setName('images')
-        .setDescription('Get a random image from Google by a search query!')
+        .setDescription('Get a random image from DuckDuckGo by a search query!')
         .addStringOption(opt =>
             opt
                 .setName('query')
