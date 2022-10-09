@@ -79,12 +79,22 @@ for (const file of commandFiles) {
     client.commands.set(command.data.name, command);
 }
 
+let presenceInterval: any;
 client.once('ready', async () => {
     console.log(`${client.user!.username} is now ready!`);
+    const guild = client.guilds.cache.get(process.env.GUILD_ID!)!;
+
     client.user!.setPresence({
-        activities: [{ name: `hot guys doing the splits`, type: ActivityType.Watching }],
+        activities: [{ name: `over ${guild.memberCount} users`, type: ActivityType.Watching }],
         status: 'dnd'
     });
+
+    presenceInterval = setInterval(() => {
+        client.user!.setPresence({
+            activities: [{ name: `over ${guild.memberCount} users`, type: ActivityType.Watching }],
+            status: 'dnd'
+        });
+    }, 30 * 1000)
 
     // Register commands
     const rest = new REST({
@@ -308,3 +318,8 @@ client.on('guildMemberRemove', async (member) => {
 });
 
 client.login(process.env.TOKEN);
+
+const ON_DEATH = require('death');
+ON_DEATH((signal: any, err: any) => {
+    clearInterval(presenceInterval);
+});
