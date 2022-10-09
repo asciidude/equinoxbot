@@ -79,43 +79,6 @@ export default {
                 )
         )
 
-        // Triggers
-        .addSubcommand(sub => 
-            sub
-                .setName('add_trigger')
-                .setDescription('A list of trigger-words to reply to')
-                .addStringOption(opt =>
-                    opt
-                        .setName('trigger')
-                        .setDescription('The trigger message')
-                        .setRequired(true)
-                )
-                .addStringOption(opt =>
-                    opt
-                        .setName('response')
-                        .setDescription('The reponse to the message')
-                        .setRequired(true)
-                )
-                .addBooleanOption(opt =>
-                    opt
-                        .setName('delete')
-                        .setDescription('Enable/disable deletion of the message')
-                        .setRequired(true)
-                )
-        )
-
-        .addSubcommand(sub => 
-            sub
-                .setName('remove_trigger')
-                .setDescription('Remove a trigger by ID')
-                .addIntegerOption(opt =>
-                    opt
-                        .setName('id')
-                        .setDescription('The trigger message ID to remove')
-                        .setRequired(true)
-                )
-        )
-
         // Prefix
         .addSubcommand(sub => 
             sub
@@ -344,53 +307,6 @@ export default {
                 });
 
                 break;
-
-            /////////////
-            // Welcome //
-            /////////////
-            case 'welcome':
-                if(interaction.options.getString('message').toLowerCase() == 'disable') {
-                    config['welcome']['enabled'] = false;
-                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
-
-                    interaction.reply({
-                        content: '✅ Disabled the server\'s welcome message!',
-                        ephemeral: true
-                    });
-
-                    break;
-                }
-
-                if(interaction.options.getChannel('channel')) {
-                    config['welcome']['enabled'] = true;
-                    config['welcome']['channel'] = interaction.options.getChannel('channel').id;
-                    config['welcome']['message'] = interaction.options.getString('message');
-
-                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
-
-                    interaction.reply({
-                        content: `Set the welcome message and set it to use <#${interaction.options.getChannel('channel').id}>, check the message with \`/config test\``,
-                        ephemeral: true
-                    });
-                } else if(interaction.options.getBoolean('dm')) {
-                    config['welcome']['enabled'] = true;
-                    config['welcome']['channel'] = 'dm';
-                    config['welcome']['message'] = interaction.options.getString('message');
-
-                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
-
-                    interaction.reply({
-                        content: `Set the welcome message and set it to use DMs, check the message with \`/config test\``,
-                        ephemeral: true
-                    });
-                } else {
-                    interaction.reply({
-                        content: 'Oops! Have a look in the optional parameters to set to DM the user or use a channel.',
-                        ephemeral: true
-                    });
-                }
-
-                break;
             
             /////////////
             // Welcome //
@@ -547,42 +463,6 @@ export default {
     
                 break;
 
-            //////////////
-            // Triggers //
-            //////////////
-            case 'add_trigger':
-                config['triggers'].push({
-                    "trigger": interaction.options.getString('trigger'),
-                    "response": interaction.options.getString('response'),
-                    "delete": interaction.options.getBoolean('delete'),
-                    "id": Date.now()
-                });
-
-                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
-    
-                interaction.reply({
-                    content: `Added trigger \`${interaction.options.getString('trigger')}\`, check with \`/config test\``,
-                    ephemeral: true
-                });
-    
-                break;
-            
-            case 'remove_trigger':
-                for (let i = 0; i < config['triggers'].length; i++) {
-                    if (config['triggers'][i].id == interaction.options.getInteger('id')) {
-                        config['triggers'].splice(i, 1);
-                    }
-                }
-    
-                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
-        
-                interaction.reply({
-                    content: `Removed trigger \`${interaction.options.getInteger('id')}\``,
-                    ephemeral: true
-                });
-    
-                break;
-
             //////////
             // Test //
             //////////
@@ -618,47 +498,6 @@ export default {
                             ephemeral: true
                         });
         
-                        break;
-                    
-                    
-
-                    case 'prefix':
-                        interaction.reply({
-                            content: `This server's prefix is \`${config['prefix']}\``,
-                            ephemeral: true
-                        });
-        
-                        break;
-                    
-                    
-                    case 'triggers':
-                        if(config['triggers'].length <= 0) {
-                            interaction.reply({
-                                content: '⚠ No triggers found',
-                                ephemeral: true
-                            });
-
-                            break;
-                        }
-
-                        let triggers_list = '';
-                            
-                        for (let i = 0; i < config['triggers'].length; i++) {
-                            let obj = config['triggers'][i];
-
-                            triggers_list
-                            += `**Trigger:** ${obj['trigger']}`
-                            + `\n**Response:** ${obj['response']}`
-                            + `\n**Delete Message:** ${obj['delete'] === true ? '✅' : '⛔'}`
-                            + `\n**Trigger ID:** \`${obj['id']}\``
-                            + `\n\n`;
-                        }
-                    
-                        interaction.reply({
-                            content: triggers_list,
-                            ephemeral: true
-                        });
-    
                         break;
                 }
 

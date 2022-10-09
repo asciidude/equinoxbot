@@ -74,7 +74,11 @@ export default {
 		});
 
 		collector.on('end', (collection: any) => {
-			msg.delete();
+			try {
+				interaction.deleteReply();
+			} catch (err) {
+				console.log(err);
+			}
 		});
     }
 }

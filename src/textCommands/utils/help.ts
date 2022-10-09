@@ -47,42 +47,41 @@ export default {
 					])
 			);
 		
-		try {
-			const msg = await message.reply({
-				embeds: [embed],
-				components: [row]
+		const msg = await message.reply({
+			embeds: [embed],
+			components: [row]
+		});
+
+		const collector = msg.createMessageComponentCollector({ componentType: ComponentType.SelectMenu, time: 5 * 60 * 1000 });
+
+		collector.on('collect', async (interaction: any) => {
+			if(interaction.member!.user.id !== message.author.id) return;
+
+            embed.setFields();
+            const categories = client.textCommands.filter(cmd => cmd.category === interaction.values[0]);
+			
+			for(const command of categories) {
+				embed.addFields({
+                        name: `${command[1].name} | \`${config['prefix'] + command[1].usage}\``,
+                        value: `*${command[1].description}*`
+                             + `\n**Aliases:** ${command[1].aliases[0] ? command[1].aliases.join(', ') : 'none'}`,
+                        inline: true
+                });
+			}
+
+			await interaction.deferUpdate();
+
+			await msg.edit({
+				embeds: [embed]
 			});
+		});
 
-			const collector = msg.createMessageComponentCollector({ componentType: ComponentType.SelectMenu, time: 5 * 60 * 1000 });
-
-			collector.on('collect', async (interaction: any) => {
-				if(interaction.member!.user.id !== message.author.id) return;
-
-                embed.setFields();
-                const categories = client.textCommands.filter(cmd => cmd.category === interaction.values[0]);
-				
-				for(const command of categories) {
-					embed.addFields({
-                            name: `${command[1].name} | \`${config['prefix'] + command[1].usage}\``,
-                            value: `*${command[1].description}*`
-                                 + `\n**Aliases:** ${command[1].aliases[0] ? command[1].aliases.join(', ') : 'none'}`,
-                            inline: true
-                    });
-				}
-
-				await interaction.deferUpdate();
-
-				await msg.edit({
-					embeds: [embed]
-				});
-			});
-
-			collector.on('end', collection => {
+		collector.on('end', collection => {
+			try {
 				msg.delete();
-			});
-		} catch(err) {
-			message.reply('i am unable to send messages to you, enable dms on this server or globally and then re-run the help command :slight_smile:')
-			console.log(`Unable to send messages to ${message.member!.user.username}`);
-		}
+			} catch (err) {
+				console.log(err);
+			}
+		});
 	}
 }
