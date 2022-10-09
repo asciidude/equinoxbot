@@ -3,7 +3,7 @@ import { config } from "../..";
 
 export default {
     name: 'echo',
-    description: 'Pong!',
+    description: 'Repeat the message you want the bot to say',
     category: 'fun',
     aliases: ['say'],
     usage: 'echo <message>',
