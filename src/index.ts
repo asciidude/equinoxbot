@@ -182,9 +182,10 @@ client.on('messageCreate', async (message: any) => {
     // Triggers
     const trigger = config['triggers'].filter((e: any) => e.trigger === message.content)[0];
     
-    if(trigger != null) {
+    if(trigger) {
         try {
             message.reply(await replaceOptions(trigger['response'], message.member, message.guild));
+            return;
         } catch(err) {
             console.log(
                 `Unable to send message`
