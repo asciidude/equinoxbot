@@ -171,27 +171,31 @@ let context: any[] = []; // Instance-dependent contexts :D
 client.on('messageCreate', async (message: any) => {
     if(message.author.bot && message.channel.type != ChannelType.DM) return;
 
-    const args_cmd = message.content.trim().split(/ +/g);
+    // Triggers
+    const trigger = config['triggers'].filter((e: any) => e.trigger === message.content)[0];
     
-    const cmd = args_cmd[0].slice(config['prefix'].length).toLowerCase();
-    const args = args_cmd.slice(config['prefix'].length);
+    if(trigger != null) {
+        try {
+            message.reply(await replaceOptions(trigger['response'], message.member, message.guild));
+        } catch(err) {
+            console.log(
+                `Unable to send message`
+                + '\n↳' + err
+            );
+        }
 
-    if(!message.content.startsWith(config['prefix'])) return;
+        if(trigger['delete']) {
+            if(!message.deletable) {
+                message.channel.send('⚠ Cannot delete trigger-message due to not enough permissions');
+                return;
+            }
 
-    if(!(await hasPermission(cmd, message.member!))) {
-        return message.reply('⛔ You do not have permission to use this command!');
-    }
-
-    const textCommand = client.textCommands.get(cmd) || client.textAliases.get(cmd);
-    if(!textCommand) return message.reply('⚠ Command not found');
-
-    try {
-        await textCommand.execute(message, args, client);
-    } catch(err) {
-        if(err) console.log(err);
-        else console.log(`Failed to execute text command (${cmd}), no error provided`);
-
-        message.channel!.send(`Error in text command \`${cmd}\`! <@${process.env.DEVELOPER_ID}>, please have a look at my code!`);
+            try {
+                await message.delete();
+            } catch (err) {
+                message.channel.send('⚠ Cannot delete trigger-message due to 2FA being enabled');
+            }
+        }
     }
 
     // Cleverbot
@@ -233,31 +237,27 @@ client.on('messageCreate', async (message: any) => {
         }
     }
 
-    // Triggers
-    const trigger = config['triggers'].filter((e: any) => e.trigger === message.content)[0];
+    const args_cmd = message.content.trim().split(/ +/g);
     
-    if(trigger != null) {
-        try {
-            message.reply(await replaceOptions(trigger['response'], message.member, message.guild));
-        } catch(err) {
-            console.log(
-                `Unable to send message`
-                + '\n↳' + err
-            );
-        }
+    const cmd = args_cmd[0].slice(config['prefix'].length).toLowerCase();
+    const args = args_cmd.slice(config['prefix'].length);
 
-        if(trigger['delete']) {
-            if(!message.deletable) {
-                message.channel.send('⚠ Cannot delete trigger-message due to not enough permissions');
-                return;
-            }
+    if(!message.content.startsWith(config['prefix'])) return;
 
-            try {
-                await message.delete();
-            } catch (err) {
-                message.channel.send('⚠ Cannot delete trigger-message due to 2FA being enabled');
-            }
-        }
+    if(!(await hasPermission(cmd, message.member!))) {
+        return message.reply('⛔ You do not have permission to use this command!');
+    }
+
+    const textCommand = client.textCommands.get(cmd) || client.textAliases.get(cmd);
+    if(!textCommand) return message.reply('⚠ Command not found');
+
+    try {
+        await textCommand.execute(message, args, client);
+    } catch(err) {
+        if(err) console.log(err);
+        else console.log(`Failed to execute text command (${cmd}), no error provided`);
+
+        message.channel!.send(`Error in text command \`${cmd}\`! <@${process.env.DEVELOPER_ID}>, please have a look at my code!`);
     }
 });
 
