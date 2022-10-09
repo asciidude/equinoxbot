@@ -4,7 +4,15 @@ import 'dotenv/config';
 import fs from 'fs';
 import { REST } from '@discordjs/rest';
 import { Routes } from 'discord-api-types/v9';
-import Discord, { Collection, TextChannel, GuildMember, Interaction, ActivityType, GatewayIntentBits, Guild, EmbedBuilder, MessageType, ChannelType } from 'discord.js';
+import Discord, {
+    Collection,
+    TextChannel,
+    ActivityType,
+    GatewayIntentBits,
+    Guild,
+    MessageType,
+    ChannelType
+} from 'discord.js';
 import replaceOptions from './utils/replaceOptions';
 import cleverbot from 'cleverbot-free';
 import chokidar from 'chokidar';

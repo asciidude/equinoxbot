@@ -1,4 +1,11 @@
-import { SlashCommandBuilder, Client, EmbedBuilder, Message, ActionRowBuilder, SelectMenuBuilder, SelectMenuOptionBuilder, ComponentType, Interaction } from "discord.js";
+import {
+	EmbedBuilder,
+	ActionRowBuilder,
+	SelectMenuBuilder,
+	SelectMenuOptionBuilder,
+	SlashCommandBuilder,
+	ComponentType
+} from "discord.js";
 import { config } from "../..";
 
 export default {
