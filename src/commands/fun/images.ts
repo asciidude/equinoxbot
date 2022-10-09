@@ -23,7 +23,9 @@ export default {
             const random = Math.floor(Math.random() * res.length);
     
             interaction.reply({
-                content: res[random]['image'],
+                content: `**Source:** ${res[random]['image']}`
+                       + `\n**Search Terms:** ${interaction.options.getString('query')}`
+                       + `\n**Requested by:** ${interaction.member}`,
                 ephemeral: false
             });
         } catch (err) {
