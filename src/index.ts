@@ -133,11 +133,19 @@ client.once('ready', async () => {
 
     (async() => {
         try {
-            await rest.put(Routes.applicationGuildCommands(client.user!.id, process.env.GUILD_ID!), {
-                body: commands
-            });
+            if(process.env.NODE_ENV === 'development') {
+                await rest.put(Routes.applicationGuildCommands(client.user!.id, process.env.GUILD_ID!), {
+                    body: commands
+                });
+    
+                console.log(`Registered slash commands successfully (type: guildCommands, ${process.env.GUILD_ID})`);
+            } else {
+                await rest.put(Routes.applicationCommands(client.user!.id), {
+                    body: commands
+                });
 
-            console.log(`Registered slash commands successfully (type: guildCommands, ${process.env.GUILD_ID})`);
+                console.log('Registered slash commands successfully (type: globalCommands)');
+            }
         } catch(err) {
             if(err) console.log(err);
             else console.log('Failed to register slash commands, no error provided');
