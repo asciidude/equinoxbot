@@ -1,7 +1,7 @@
 {
   "name": "homosexualhaven",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/index.ts",
   "scripts": {
     "start": "nodemon --watch \"src/**\" --ext \"ts,json\" --ignore \"src/**/*.spec.ts\" --ignore \"src/config.json\" --ignore \"src/clever.json\" --exec \"ts-node src/index.ts\""
   },
@@ -10,13 +10,16 @@
     "@discordjs/builders": "^1.2.0",
     "@discordjs/rest": "^1.2.0",
     "@types/duckduckgo-images-api": "^1.0.1",
+    "@types/got": "^9.6.12",
     "axios": "^1.1.2",
     "chokidar": "^3.5.3",
     "cleverbot-free": "^1.1.11",
     "discord.js": "^14.5.0",
     "dotenv": "^16.0.3",
     "duckduckgo-images-api": "^1.0.5",
+    "got": "^12.5.1",
     "imgur": "^2.2.0",
-    "tenorjs": "^1.0.10"
+    "tenorjs": "^1.0.10",
+    "text-to-img-craiyon-scrapper": "^1.0.2"
   }
 }
