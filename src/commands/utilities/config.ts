@@ -130,6 +130,19 @@ export default {
                 )
         )
 
+        // Cleverbot
+        .addSubcommand(sub => 
+            sub
+                .setName('cleverbot_channel')
+                .setDescription('Set the channel for Cleverbot usage')
+                .addChannelOption(opt =>
+                    opt
+                        .setName('channel')
+                        .setDescription('The channel to use')
+                        .setRequired(true)
+                )
+        )
+
         // Permissions
         .addSubcommand(sub => 
             sub
@@ -519,6 +532,20 @@ export default {
                     ephemeral: true
                 })
 
+                break;
+
+            ///////////////
+            // Cleverbot //
+            ///////////////
+            case 'cleverbot_channel':
+                config['cleverbot']['channel'] = interaction.options.getChannel('channel').id;
+                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+    
+                interaction.reply({
+                    content: `✅ Set the Cleverbot channel to ${interaction.options.getChannel('channel')}`,
+                    ephemeral: true
+                })
+    
                 break;
 
             //////////////

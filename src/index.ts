@@ -140,40 +140,42 @@ client.on('messageCreate', async (message) => {
     if(message.author.bot) return;
 
     // Cleverbot
-    const getUser = () => context.filter((e: any) => e.id == message.author.id)[0];
+    if(message.channel.id == config['cleverbot']['channel']) {
+        const getUser = () => context.filter((e: any) => e.id == message.author.id)[0];
 
-    let user = getUser();
-    if(!user) {
-        context.push({
-            id: message.author.id,
-            context_list: []
-        });
+        let user = getUser();
+        if(!user) {
+            context.push({
+                id: message.author.id,
+                context_list: []
+            });
 
-        user = getUser();
-    }
-    
-    try {
-        if(process.env.NODE_ENV !== 'development') {
-            if(message.type == MessageType.Reply) {
-                const replyParent = await message.channel.messages.cache.get(message.reference!.messageId!)!;
-    
-                if(replyParent.author.id === client.user!.id) {
-                    user['context_list'].push(message.content);
+            user = getUser();
+        }
+        
+        try {
+            if(process.env.NODE_ENV !== 'development') {
+                if(message.type == MessageType.Reply) {
+                    const replyParent = await message.channel.messages.cache.get(message.reference!.messageId!)!;
+        
+                    if(replyParent.author.id === client.user!.id) {
+                        user['context_list'].push(message.content);
+                        const cleverResponse = await cleverbot(message.content, user['context_list']);
+                        user['context_list'].push(cleverResponse);
+            
+                        message.reply(cleverResponse);
+                    }
+                } else if(message.content.startsWith(`<@${client.user!.id}>`)) {
+                    user['context_list'].push(message.content.slice(2 + message.author.id.length + 3)); // Remove the beginning "<@id> "
                     const cleverResponse = await cleverbot(message.content, user['context_list']);
                     user['context_list'].push(cleverResponse);
-        
+                    
                     message.reply(cleverResponse);
                 }
-            } else if(message.content.startsWith(`<@${client.user!.id}>`)) {
-                user['context_list'].push(message.content.slice(2 + message.author.id.length + 3)); // Remove the beginning "<@id> "
-                const cleverResponse = await cleverbot(message.content, user['context_list']);
-                user['context_list'].push(cleverResponse);
-                
-                message.reply(cleverResponse);
             }
+        } catch (err) {
+            message.reply('😓 Sorry, I couldn\'t figure out what to say. Try again!')
         }
-    } catch (err) {
-        message.reply('😓 Sorry, I couldn\'t figure out what to say. Try again!')
     }
 
     // Commands
