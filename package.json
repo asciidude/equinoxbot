@@ -20,7 +20,6 @@
     "duckduckgo-images-api": "^1.0.5",
     "got": "^12.5.1",
     "imgur": "^2.2.0",
-    "tenorjs": "^1.0.10",
-    "text-to-img-craiyon-scrapper": "^1.0.2"
+    "tenorjs": "^1.0.10"
   }
 }
