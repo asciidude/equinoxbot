@@ -7,6 +7,7 @@ import {
     ButtonStyle
 } from "discord.js";
 import Server from "../../models/Server.model";
+import { encode, decode } from 'js-base64'
 
 export default {
     data: new SlashCommandBuilder()
@@ -51,7 +52,7 @@ export default {
             sub
                 .setName('remove')
                 .setDescription('Remove a trigger by ID')
-                .addIntegerOption(opt =>
+                .addStringOption(opt =>
                     opt
                         .setName('id')
                         .setDescription('The trigger message ID to remove')
@@ -71,7 +72,7 @@ export default {
                             trigger: interaction.options.getString('trigger'),
                             response: interaction.options.getString('response'),
                             delete: interaction.options.getBoolean('delete'),
-                            id: `${Date.now()}.${btoa(interaction.options.getString('trigger'))}`
+                            id: `${encode(interaction.guild.id)}`
                         }
                     }
                 }
@@ -92,7 +93,7 @@ export default {
                 return;
             }
 
-            if(!guild!.triggers.some((e: any) => e['id'] === interaction.options.getInteger('id'))) {
+            if(!guild!.triggers.some((e: any) => e['id'] === interaction.options.getString('id'))) {
                 interaction.reply({
                     content: '⚠ No triggers found',
                     ephemeral: true
@@ -106,14 +107,14 @@ export default {
                 {
                     $pull: {
                         triggers: {
-                            id: interaction.options.getInteger('id')
+                            id: interaction.options.getString('id')
                         }
                     }
                 }
             );
     
             interaction.reply({
-                content: `Removed trigger \`${interaction.options.getInteger('id')}\``,
+                content: `Removed trigger \`${interaction.options.getString('id')}\``,
                 ephemeral: true
             });
         } else if(interaction.options.getSubcommand() === 'search') {

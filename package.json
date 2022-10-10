@@ -17,6 +17,7 @@
     "dotenv": "^16.0.3",
     "duckduckgo-images-api": "^1.0.5",
     "imgur": "^2.2.0",
+    "js-base64": "^3.7.2",
     "mongoose": "^6.6.5",
     "tenorjs": "^1.0.10"
   }
