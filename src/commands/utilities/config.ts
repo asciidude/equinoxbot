@@ -175,7 +175,6 @@ export default {
                             { name: '😢 Goodbye Configuration', value: 'goodbye' },
                             { name: '🦺 Auto-role Configuration', value: 'autorole' },
                             { name: '👂 View Prefix', value: 'prefix' },
-                            { name: '💬 View Triggers', value: 'triggers' },
                         )
                 )
         )
