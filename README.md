@@ -1,5 +1,8 @@
 # Equinox Bot
-**The** multi-pourpose bot with incredible features, extremely configurable.
+The multi-pourpose bot with incredible features, extremely configuration options, and certainly fun to use.
+
+# Invite
+https://discord.com/api/oauth2/authorize?client_id=1027424058297552937&permissions=8&scope=bot%20applications.commands
 
 # Dependencies
 * @discordjs/builders: Discord builders (commands and stuff!)
