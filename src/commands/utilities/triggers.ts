@@ -72,7 +72,7 @@ export default {
                             trigger: interaction.options.getString('trigger'),
                             response: interaction.options.getString('response'),
                             delete: interaction.options.getBoolean('delete'),
-                            id: `${guild!.triggers.length + 1}${encode(interaction.guild.id)}`
+                            id: encode(String(Date.now()))
                         }
                     }
                 }
