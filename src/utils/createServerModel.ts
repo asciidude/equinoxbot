@@ -22,7 +22,13 @@ export default async (guild_id: string) => {
             role: ''
         },
     
-        permissions: [],
+        permissions: [
+            {
+                commandName: 'config',
+                roles: [],
+                administratorOverride: true
+            }
+        ],
     
         cleverbot: {
             enabled: false,
