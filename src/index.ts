@@ -322,7 +322,7 @@ client.on('guildMemberAdd', async (member) => {
         } else {
             try {
                 const channel = curr_guild!.channels.cache.get(guild!.welcome.channel) as TextChannel;
-                channel.send(await replaceOptions(guild!.welcome.channel, member, curr_guild));
+                channel.send(await replaceOptions(guild!.welcome.message, member, curr_guild));
             } catch (err) {
                 console.log(
                     `Unable to send welcome message`
