@@ -6,8 +6,7 @@ import {
     ButtonBuilder,
     ButtonStyle
 } from "discord.js";
-import fs from 'fs';
-import { config } from "../..";
+import Server from "../../models/Server.model";
 
 export default {
     data: new SlashCommandBuilder()
@@ -60,16 +59,23 @@ export default {
                 )
         ),
     execute: async (interaction: any) => {
+        const guild = await Server.findOne({ guild_id: interaction.guild.id });
+
         if(interaction.options.getSubcommand() === 'add') {
             // Add triggers
-            config['triggers'].push({
-                "trigger": interaction.options.getString('trigger'),
-                "response": interaction.options.getString('response'),
-                "delete": interaction.options.getBoolean('delete'),
-                "id": Date.now()
-            });
-
-            fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+            await Server.updateOne(
+                { guild_id: interaction.guild.id },
+                {
+                    $push: {
+                        triggers: {
+                            trigger: interaction.options.getString('trigger'),
+                            response: interaction.options.getString('response'),
+                            delete: interaction.options.getBoolean('delete'),
+                            id: `${Date.now()}.${btoa(interaction.options.getString('trigger'))}`
+                        }
+                    }
+                }
+            );
 
             interaction.reply({
                 content: `Added trigger \`${interaction.options.getString('trigger')}\``,
@@ -77,7 +83,7 @@ export default {
             });
         } else if(interaction.options.getSubcommand() === 'remove') {
             // Remove triggers
-            if(config['triggers'].length <= 0) {
+            if(guild!.triggers.length <= 0) {
                 interaction.reply({
                     content: '⚠ Triggers have not been setup on this server',
                     ephemeral: true
@@ -86,7 +92,7 @@ export default {
                 return;
             }
 
-            if(!config['triggers'].some((e: any) => e['id'] === interaction.options.getInteger('id'))) {
+            if(!guild!.triggers.some((e: any) => e['id'] === interaction.options.getInteger('id'))) {
                 interaction.reply({
                     content: '⚠ No triggers found',
                     ephemeral: true
@@ -95,13 +101,16 @@ export default {
                 return;
             }
 
-            for (let i = 0; i < config['triggers'].length; i++) {
-                if (config['triggers'][i]['id'] == interaction.options.getInteger('id')) {
-                    config['triggers'].splice(i, 1);
+            Server.updateOne(
+                { guild_id: interaction.guild.id },
+                {
+                    $pull: {
+                        triggers: {
+                            id: interaction.options.getInteger('id')
+                        }
+                    }
                 }
-            }
-
-            fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+            );
     
             interaction.reply({
                 content: `Removed trigger \`${interaction.options.getInteger('id')}\``,
@@ -109,7 +118,7 @@ export default {
             });
         } else if(interaction.options.getSubcommand() === 'search') {
             // Search for triggers
-            if(config['triggers'].length <= 0) {
+            if(guild!.triggers.length <= 0) {
                 interaction.reply({
                     content: '⚠ Triggers have not been setup on this server',
                     ephemeral: true
@@ -120,7 +129,7 @@ export default {
 
             if(interaction.options.getString('query')) {
                 // Search by query
-                const trigger = config['triggers'].filter((t: any) => t['trigger'].includes(interaction.options.getString('query')))[0];
+                const trigger = guild!.triggers.filter((t: any) => t.trigger.includes(interaction.options.getString('query')))[0];
 
                 if(!trigger) {
                     interaction.reply({
@@ -193,43 +202,43 @@ export default {
                     switch(collectedInteraction.customId) {
                         case 'trigger_far_left':
                             currentIndex = 0;
-                            trigger = config['triggers'][0];
+                            trigger = guild!.triggers[0];
                             setTriggerDescription(embed, trigger);
     
                             break;
     
                         case 'trigger_left':
-                            if(!config['triggers'][currentIndex - 1]) {
-                                trigger = config['triggers'][currentIndex];
+                            if(!guild!.triggers[currentIndex - 1]) {
+                                trigger = guild!.triggers[currentIndex];
                                 setTriggerDescription(embed, trigger);
                                 
                                 break;
                             }
     
                             currentIndex--;
-                            trigger = config['triggers'][currentIndex];
+                            trigger = guild!.triggers[currentIndex];
     
                             setTriggerDescription(embed, trigger);
                             
                             break;
     
                         case 'trigger_right':
-                            if(!config['triggers'][currentIndex + 1]) {
-                                trigger = config['triggers'][currentIndex];
+                            if(!guild!.triggers[currentIndex + 1]) {
+                                trigger = guild!.triggers[currentIndex];
                                 setTriggerDescription(embed, trigger);
                                 
                                 break;
                             }
     
                             currentIndex++;
-                            trigger = config['triggers'][currentIndex];
+                            trigger = guild!.triggers[currentIndex];
                             setTriggerDescription(embed, trigger);
                             
                             break;
     
                         case 'trigger_far_right':
-                            currentIndex = config['triggers'].length - 1;
-                            trigger = config['triggers'][currentIndex];
+                            currentIndex = guild!.triggers.length - 1;
+                            trigger = guild!.triggers[currentIndex];
                 
                             embed.setDescription(
                                 `**Trigger:** ${trigger.trigger}`

@@ -6,13 +6,15 @@ import {
 	SlashCommandBuilder,
 	ComponentType
 } from "discord.js";
-import { config } from "../..";
+import Server from "../../models/Server.model";
 
 export default {
     data: new SlashCommandBuilder()
         .setName('help')
         .setDescription('Get a help menu for text commands only'),
     execute: async (interaction: any) => {
+        const guild = await Server.findOne({ guild_id: interaction.guild.id });
+
         const embed = new EmbedBuilder()
 			.setColor('Blurple')
 			.setTitle('Help')
@@ -59,7 +61,7 @@ export default {
 			
 			for(const command of categories) {
 				embed.addFields({
-                        name: `${command[1].name} | \`${config['prefix'] + command[1].usage}\``,
+                        name: `${command[1].name} | \`${guild!.prefix + command[1].usage}\``,
                         value: `*${command[1].description}*`
                              + `\n**Aliases:** ${command[1].aliases[0] ? command[1].aliases.join(', ') : 'none'}`,
                         inline: true

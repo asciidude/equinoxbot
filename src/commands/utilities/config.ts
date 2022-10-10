@@ -2,8 +2,7 @@ import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
 import replaceOptions from '../../utils/replaceOptions';
 import findPermission from '../../utils/findPermission';
 import commandExists from '../../utils/commandExists';
-import { config } from '../..';
-import fs from 'fs';
+import Server from '../../models/Server.model';
 
 export default {
     data: new SlashCommandBuilder()
@@ -182,10 +181,12 @@ export default {
                 .setDescription('Get the available options for messages (like {USER.MENTION})')
         ),
     execute: async (interaction: any) => {
+        const guild = await Server.findOne({ guild_id: interaction.guild.id });
+
         let permission;
 
         if(interaction.options.getString('command')) {
-            permission = await findPermission(interaction.options.getString('command'));
+            permission = await findPermission(interaction.options.getString('command'), interaction.guild.id);
         }
 
         switch(interaction.options.getSubcommand()) {
@@ -202,13 +203,16 @@ export default {
                     break;
                 }
 
-                for (let i = 0; i < config['permissions'].length; i++) {
-                    if (config['permissions'][i].commandName == interaction.options.getString('command')) {
-                        config['permissions'].splice(i, 1);
+                Server.updateOne(
+                    { guild_id: interaction.guild.id },
+                    {
+                        $pull: {
+                            permissions: {
+                                commandName: interaction.options.getString('command')
+                            }
+                        }
                     }
-                }
-
-                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+                );
 
                 interaction.reply({
                     content: `Removed permissions requirement from \`${interaction.options.getString('command')}\``,
@@ -220,13 +224,18 @@ export default {
             case 'set_admin_override':
                 if(!permission) {
                     if(await commandExists(interaction.options.getString('command'))) {
-                        config['permissions'].push({
-                            commandName: interaction.options.getString('command'),
-                            roles: [],
-                            administratorOverride: interaction.options.getBoolean('enabled')
-                        });
-
-                        fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+                        Server.updateOne(
+                            { guild_id: interaction.guild.id },
+                            {
+                                $push: {
+                                    permissions: {
+                                        commandName: interaction.options.getString('command'),
+                                        roles: [],
+                                        administratorOverride: interaction.options.getBoolean('enabled')
+                                    }
+                                }
+                            }
+                        );
 
                         interaction.reply({
                             content: `Set administrator override for \`${interaction.options.getString('command')}\` to \`${interaction.options.getBoolean('enabled')}\``,
@@ -245,7 +254,6 @@ export default {
                 }
 
                 permission['administratorOverride'] = interaction.options.getBoolean('enabled');
-                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
 
                 interaction.reply({
                     content: `Set administrator override for \`${interaction.options.getString('command')}\` to \`${permission['administratorOverride']}\``,
@@ -257,13 +265,18 @@ export default {
             case 'set_permission_role':
                 if(!permission) {
                     if(await commandExists(interaction.options.getString('command'))) {
-                        config['permissions'].push({
-                            commandName: interaction.options.getString('command'),
-                            roles: [interaction.options.getRole('role').id],
-                            administratorOverride: true
-                        });
-
-                        fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+                        Server.updateOne(
+                            { guild_id: interaction.guild.id },
+                            {
+                                $push: {
+                                    permissions: {
+                                        commandName: interaction.options.getString('command'),
+                                        roles: [interaction.options.getRole('role').id],
+                                        administratorOverride: true
+                                    }
+                                }
+                            }
+                        );
 
                         interaction.reply({
                             content: `Added permissions for ${interaction.options.getRole('role')} to \`${interaction.options.getString('command')}\``,
@@ -296,8 +309,6 @@ export default {
                     addedRolePerm = false;
                 }
 
-                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
-
                 interaction.reply({
                     content: `${addedRolePerm ? 'Added' : 'Removed'}` + 
                              ` permissions for ${interaction.options.getRole('role')}`
@@ -313,8 +324,16 @@ export default {
             /////////////
             case 'welcome':
                 if(interaction.options.getString('message').toLowerCase() == 'disable') {
-                    config['welcome']['enabled'] = false;
-                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+                    Server.updateOne(
+                        { guild_id: interaction.guild.id },
+                        {
+                            $set: {
+                                welcome: {
+                                    enabled: false
+                                }
+                            }
+                        }
+                    );
 
                     interaction.reply({
                         content: '✅ Disabled the server\'s welcome message!',
@@ -325,22 +344,36 @@ export default {
                 }
 
                 if(interaction.options.getChannel('channel')) {
-                    config['welcome']['enabled'] = true;
-                    config['welcome']['channel'] = interaction.options.getChannel('channel').id;
-                    config['welcome']['message'] = interaction.options.getString('message');
-
-                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+                    Server.updateOne(
+                        { guild_id: interaction.guild.id },
+                        {
+                            $set: {
+                                welcome: {
+                                    enabled: true,
+                                    channel: interaction.options.getChannel('channel').id,
+                                    message: interaction.options.getString('message')
+                                }
+                            }
+                        }
+                    );
 
                     interaction.reply({
                         content: `Set the welcome message and set it to use <#${interaction.options.getChannel('channel').id}>, check the message with \`/config test\``,
                         ephemeral: true
                     });
                 } else if(interaction.options.getBoolean('dm')) {
-                    config['welcome']['enabled'] = true;
-                    config['welcome']['channel'] = 'dm';
-                    config['welcome']['message'] = interaction.options.getString('message');
-
-                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+                    Server.updateOne(
+                        { guild_id: interaction.guild.id },
+                        {
+                            $set: {
+                                welcome: {
+                                    enabled: true,
+                                    channel: 'dm',
+                                    message: interaction.options.getString('message')
+                                }
+                            }
+                        }
+                    );
 
                     interaction.reply({
                         content: `Set the welcome message and set it to use DMs, check the message with \`/config test\``,
@@ -360,8 +393,16 @@ export default {
             /////////////
             case 'goodbye':
                 if(interaction.options.getString('message').toLowerCase() == 'disable') {
-                    config['goodbye']['enabled'] = false;
-                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+                    Server.updateOne(
+                        { guild_id: interaction.guild.id },
+                        {
+                            $set: {
+                                goodbye: {
+                                    enabled: false
+                                }
+                            }
+                        }
+                    );
 
                     interaction.reply({
                         content: '✅ Disabled the server\'s goodbye message!',
@@ -372,22 +413,36 @@ export default {
                 }
 
                 if(interaction.options.getChannel('channel')) {
-                    config['goodbye']['enabled'] = true;
-                    config['goodbye']['channel'] = interaction.options.getChannel('channel').id;
-                    config['goodbye']['message'] = interaction.options.getString('message');
-
-                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+                    Server.updateOne(
+                        { guild_id: interaction.guild.id },
+                        {
+                            $set: {
+                                goodbye: {
+                                    enabled: true,
+                                    channel: interaction.options.getChannel('channel').id,
+                                    message: interaction.options.getString('message')
+                                }
+                            }
+                        }
+                    );
 
                     interaction.reply({
                         content: `Set the goodbye message and set it to use <#${interaction.options.getChannel('channel').id}>, check the message with \`/config test\``,
                         ephemeral: true
                     });
                 } else if(interaction.options.getBoolean('dm')) {
-                    config['goodbye']['enabled'] = true;
-                    config['goodbye']['channel'] = 'dm';
-                    config['goodbye']['message'] = interaction.options.getString('message');
-
-                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+                    Server.updateOne(
+                        { guild_id: interaction.guild.id },
+                        {
+                            $set: {
+                                goodbye: {
+                                    enabled: true,
+                                    channel: 'dm',
+                                    message: interaction.options.getString('message')
+                                }
+                            }
+                        }
+                    );
 
                     interaction.reply({
                         content: `Set the goodbye message and set it to use DMs, check the message with \`/config test\``,
@@ -407,8 +462,16 @@ export default {
             ///////////////
             case 'autorole':
                 if(!interaction.options.getBoolean('enabled')) {
-                    config['autoRole']['enabled'] = false;
-                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+                    Server.updateOne(
+                        { guild_id: interaction.guild.id },
+                        {
+                            $set: {
+                                autoRole: {
+                                    enabled: false
+                                }
+                            }
+                        }
+                    );
 
                     interaction.reply({
                         content: '✅ Disabled the server\'s auto-role!',
@@ -424,8 +487,17 @@ export default {
                         ephemeral: true
                     })
                 } else {
-                    config['autoRole']['role'] = interaction.options.getRole('role').id;
-                    fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+                    Server.updateOne(
+                        { guild_id: interaction.guild.id },
+                        {
+                            $set: {
+                                autoRole: {
+                                    enabled: true,
+                                    role: interaction.options.getRole('role').id
+                                }
+                            }
+                        }
+                    );
 
                     interaction.reply({
                         content: `✅ Set the server's auto-role to ${interaction.options.getRole('role')}`,
@@ -439,8 +511,14 @@ export default {
             // Prefix //
             ////////////
             case 'prefix':
-                config['prefix'] = interaction.options.getString('prefix');
-                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
+                Server.updateOne(
+                    { guild_id: interaction.guild.id },
+                    {
+                        $set: {
+                            prefix: interaction.options.getString('prefix')
+                        }
+                    }
+                );
 
                 interaction.reply({
                     content: `✅ Set the server's prefix to \`${interaction.options.getString('prefix')}\``,
@@ -453,13 +531,49 @@ export default {
             // Cleverbot //
             ///////////////
             case 'cleverbot_channel':
-                config['cleverbot']['channel'] = interaction.options.getChannel('channel').id;
-                fs.writeFileSync(process.env.CONFIG_PATH!, JSON.stringify(config, null, 4));
-    
-                interaction.reply({
-                    content: `✅ Set the Cleverbot channel to ${interaction.options.getChannel('channel')}`,
-                    ephemeral: true
-                })
+                if(!interaction.options.getBoolean('enabled')) {
+                    Server.updateOne(
+                        { guild_id: interaction.guild.id },
+                        {
+                            $set: {
+                                cleverbot: {
+                                    enabled: false
+                                }
+                            }
+                        }
+                    );
+
+                    interaction.reply({
+                        content: '✅ Disabled the server\'s cleverbot functionality!',
+                        ephemeral: true
+                    });
+
+                    break;
+                }
+
+                if(!interaction.options.getRole('role')) {
+                    interaction.reply({
+                        content: 'Oops! Check the optional parameters to set the Cleverbot channel',
+                        ephemeral: true
+                    })
+                } else {
+                    Server.updateOne(
+                        { guild_id: interaction.guild.id },
+                        {
+                            $set: {
+                                cleverbot: {
+                                    enabled: true,
+                                    channel: interaction.options.getChannel('channel').id
+                                }
+                            }
+                        }
+                    );
+        
+                    interaction.reply({
+                        content: `✅ Set the Cleverbot channel to ${interaction.options.getChannel('channel')}`,
+                        ephemeral: true
+                    })
+                }
     
                 break;
 
@@ -471,9 +585,9 @@ export default {
                     case 'welcome':
                         interaction.reply({
                             content: `**Welcome**` +
-                                     `\nEnabled: ${config['welcome']['enabled'] === true ? '✅' : '⛔'}` +
-                                     `\nChannel: ${(config['welcome']['channel'] == 'dm' ? 'dm' : '<#' + config['welcome']['channel'] + '>') || 'none'}` +
-                                     `\nMessage: ${await replaceOptions(config['welcome']['message'], interaction.member, interaction.guild) || 'none'}`,
+                                     `\nEnabled: ${guild!.welcome.enabled === true ? '✅' : '⛔'}` +
+                                     `\nChannel: ${(guild!.welcome.channel == 'dm' ? 'dm' : '<#' + guild!.welcome.channel + '>') || 'none'}` +
+                                     `\nMessage: ${await replaceOptions(guild!.welcome.message, interaction.member, interaction.guild) || 'none'}`,
                             ephemeral: true
                         });
 
@@ -482,9 +596,9 @@ export default {
                     case 'goodbye':
                         interaction.reply({
                             content: `**Goodbye**` +
-                                     `\nEnabled: ${config['goodbye']['enabled'] === true ? '✅' : '⛔'}` +
-                                     `\nChannel: ${(config['goodbye']['channel'] == 'dm' ? 'dm' : '<#' + config['goodbye']['channel'] + '>') || 'none'}` +
-                                     `\nMessage: ${await replaceOptions(config['goodbye']['message'], interaction.member, interaction.guild) || 'none'}`,
+                                     `\nEnabled: ${guild!.goodbye.enabled === true ? '✅' : '⛔'}` +
+                                     `\nChannel: ${(guild!.goodbye.channel == 'dm' ? 'dm' : '<#' + guild!.goodbye.channel + '>') || 'none'}` +
+                                     `\nMessage: ${await replaceOptions(guild!.goodbye.message, interaction.member, interaction.guild) || 'none'}`,
                             ephemeral: true
                         });
     
@@ -493,8 +607,8 @@ export default {
                     case 'autorole':
                         interaction.reply({
                             content: `**Auto-role**` +
-                                     `\nEnabled: ${config['autoRole']['enabled'] === true ? '✅' : '⛔'}` +
-                                     `\nRole: ${'<@&' + config['autoRole']['role'] + '>' || 'none'}`,
+                                     `\nEnabled: ${guild!.autoRole.enabled === true ? '✅' : '⛔'}` +
+                                     `\nRole: ${'<@&' + guild!.autoRole.role + '>' || 'none'}`,
                             ephemeral: true
                         });
         

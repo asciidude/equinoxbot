@@ -7,7 +7,7 @@ import {
 	SelectMenuOptionBuilder,
 	ComponentType
 } from "discord.js";
-import { config } from "../..";
+import Server from "../../models/Server.model";
 
 export default {
     name: 'help',
@@ -16,6 +16,8 @@ export default {
     aliases: [],
     usage: 'help',
     async execute(message: Message, args: string[], client: Client) {
+        const guild = await Server.findOne({ guild_id: message.guild!.id });
+
         const embed = new EmbedBuilder()
 			.setColor('Blurple')
 			.setTitle('Help')
@@ -62,7 +64,7 @@ export default {
 			
 			for(const command of categories) {
 				embed.addFields({
-                        name: `${command[1].name} | \`${config['prefix'] + command[1].usage}\``,
+                        name: `${command[1].name} | \`${guild!.prefix + command[1].usage}\``,
                         value: `*${command[1].description}*`
                              + `\n**Aliases:** ${command[1].aliases[0] ? command[1].aliases.join(', ') : 'none'}`,
                         inline: true

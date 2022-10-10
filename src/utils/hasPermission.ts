@@ -1,8 +1,8 @@
 import { GuildMember, PermissionFlagsBits } from "discord.js";
 import findPermission from './findPermission';
 
-export default async (command: string, member: GuildMember) => {
-    const permission: any = await findPermission(command);
+export default async (command: string, member: GuildMember, guildId: string) => {
+    const permission: any = await findPermission(command, guildId);
 
     if(permission) {
         if(permission['administratorOverride']) {

@@ -1,5 +1,4 @@
 import { Client, Message } from "discord.js";
-import { config } from "../..";
 
 export default {
     name: 'echo',
@@ -9,7 +8,7 @@ export default {
     usage: 'echo <message>',
     async execute(message: Message, args: string[], client: Client) {
         if(!args[0]) {
-            message.reply(`⚠ Incorrect usage, please use: \`${config['prefix']}echo <message>\``);
+            message.reply(`⚠ Incorrect usage`);
             return;
         }
 

@@ -35,6 +35,15 @@ export const client = new Discord.Client({
     ]
 });
 
+// Mongoose
+import mongoose from 'mongoose';
+mongoose.connect(
+    process.env.MONGO_URI!,
+    () => console.log('Connected to MongoDB')
+);
+
+import Server from './models/Server.model';
+
 // Imgur
 import { ImgurClient } from 'imgur';
 export const imgur = new ImgurClient({
@@ -53,14 +62,8 @@ export const Tenor = tenor.client({
     "DateFormat": "D/MM/YYYY - H:mm:ss A"
 });
 
-export let config = JSON.parse(fs.readFileSync(process.env.CONFIG_PATH!, 'utf-8'));
-
-// Config Watch
-chokidar.watch(process.env.CONFIG_PATH!).on('change', (path: string) => {
-    config = JSON.parse(fs.readFileSync(process.env.CONFIG_PATH!, 'utf-8'));
-});
-
 import hasPermission from './utils/hasPermission';
+import createServerModel from './utils/createServerModel';
 
 // Initialize command handler
 const recursive = function(dir: string, arr: any) {
@@ -155,9 +158,15 @@ client.once('ready', async () => {
 
 try {
     client.on('interactionCreate', async (interaction: any) => {
+        const guild = await Server.findOne({ guild_id: interaction.guild.id });
+    
+        if(!guild) {
+            createServerModel(interaction.guild.id);
+        }
+
         if(interaction.isCommand() == false) return;
     
-        if(!(await hasPermission(interaction.commandName, interaction.member))) {
+        if(!(await hasPermission(interaction.commandName, interaction.member, interaction.guild.id))) {
             return interaction.reply({
                 content: '⛔ You do not have permission to use this command!',
                 ephemeral: true
@@ -186,13 +195,19 @@ try {
 let context: any[] = []; // Instance-dependent contexts :D
 client.on('messageCreate', async (message: any) => {
     if(message.author.bot && message.channel.type != ChannelType.DM) return;
+    const guild = await Server.findOne({ guild_id: message.guild.id });
+
+    if(!guild) {
+        await createServerModel(message.guild.id);
+        while(!guild) return;
+    }
 
     // Triggers
-    const trigger = config['triggers'].filter((e: any) => e.trigger === message.content)[0];
+    const trigger = guild!.triggers.filter((e: any) => e.trigger === message.content)[0];
     
     if(trigger) {
         try {
-            message.reply(await replaceOptions(trigger['response'], message.member, message.guild));
+            message.reply(await replaceOptions(trigger.response, message.member, message.guild));
             return;
         } catch(err) {
             console.log(
@@ -201,7 +216,7 @@ client.on('messageCreate', async (message: any) => {
             );
         }
 
-        if(trigger['delete']) {
+        if(trigger.delete) {
             if(!message.deletable) {
                 message.channel.send('⚠ Cannot delete trigger-message due to not enough permissions');
                 return;
@@ -216,7 +231,7 @@ client.on('messageCreate', async (message: any) => {
     }
 
     // Cleverbot
-    if(message.channel.id == config['cleverbot']['channel']) {
+    if(guild!.cleverbot.enabled && message.channel.id == guild!.cleverbot.channel) {
         const getUser = () => context.filter((e: any) => e.id == message.author.id)[0];
 
         let user = getUser();
@@ -256,12 +271,12 @@ client.on('messageCreate', async (message: any) => {
 
     const args_cmd = message.content.trim().split(/ +/g);
     
-    const cmd = args_cmd[0].slice(config['prefix'].length).toLowerCase();
-    const args = args_cmd.slice(config['prefix'].length);
+    const cmd = args_cmd[0].slice(guild!.prefix.length).toLowerCase();
+    const args = args_cmd.slice(guild!.prefix.length);
 
-    if(!message.content.startsWith(config['prefix'])) return;
+    if(!message.content.startsWith(guild!.prefix)) return;
 
-    if(!(await hasPermission(cmd, message.member!))) {
+    if(!(await hasPermission(cmd, message.member!, message.guild.id))) {
         return message.reply('⛔ You do not have permission to use this command!');
     }
 
@@ -280,11 +295,12 @@ client.on('messageCreate', async (message: any) => {
 
 client.on('guildMemberAdd', async (member) => {
     if(member.user.bot) return;
-    const guild = client.guilds.cache.get(process.env.GUILD_ID!) as Guild;
+    const curr_guild = client.guilds.cache.get(process.env.GUILD_ID!) as Guild;
+    const guild = await Server.findOne({ guild_id: curr_guild.id });
 
-    if(config['autoRole']['enabled']) {
+    if(guild!.autoRole.enabled) {
         try {
-            member.roles.add(guild.roles.cache.get(config['autoRole']['role'])!, 'Auto-role');
+            member.roles.add(curr_guild.roles.cache.get(guild!.autoRole.role)!, 'Auto-role');
         } catch (err) {
             console.log(
                 `Unable to add role to ${member.user.username}`
@@ -293,10 +309,10 @@ client.on('guildMemberAdd', async (member) => {
         }
     }
 
-    if(config['welcome']['enabled']) {
-        if(config['welcome']['channel'] == 'dm') {
+    if(guild!.welcome.enabled) {
+        if(guild!.welcome.channel == 'dm') {
             try {
-                member.send(await replaceOptions(config['welcome']['message'], member, guild));
+                member.send(await replaceOptions(guild!.welcome.message, member, curr_guild));
             } catch (err) {
                 console.log(
                     `Unable to DM ${member.user.username}`
@@ -304,20 +320,28 @@ client.on('guildMemberAdd', async (member) => {
                 );
             }
         } else {
-            const channel = guild!.channels.cache.get(config['welcome']['channel']) as TextChannel;
-            channel.send(await replaceOptions(config['welcome']['message'], member, guild));
+            try {
+                const channel = curr_guild!.channels.cache.get(guild!.welcome.channel) as TextChannel;
+                channel.send(await replaceOptions(guild!.welcome.channel, member, curr_guild));
+            } catch (err) {
+                console.log(
+                    `Unable to send welcome message`
+                    + '\n↳' + err
+                );
+            }
         }
     }
 });
 
 client.on('guildMemberRemove', async (member) => {
     if(member.user.bot) return;
-    const guild = client.guilds.cache.get(process.env.GUILD_ID!) as Guild;
+    const curr_guild = client.guilds.cache.get(process.env.GUILD_ID!) as Guild;
+    const guild = await Server.findOne({ guild_id: curr_guild.id });
 
-    if(config['goodbye']['enabled']) {
-        if(config['goodbye']['channel'] == 'dm') {
+    if(guild!.goodbye.enabled) {
+        if(guild!.goodbye.channel == 'dm') {
             try {
-                member.send(await replaceOptions(config['goodbye']['message'], member, guild));
+                member.send(await replaceOptions(guild!.goodbye.message, member, curr_guild));
             } catch (err) {
                 console.log(
                     `Unable to DM ${member.user.username}`
@@ -325,8 +349,8 @@ client.on('guildMemberRemove', async (member) => {
                 );
             }
         } else {
-            const channel = guild!.channels.cache.get(config['goodbye']['channel']) as TextChannel;
-            channel.send(await replaceOptions(config['goodbye']['message'], member, guild));
+            const channel = curr_guild!.channels.cache.get(guild!.goodbye.channel) as TextChannel;
+            channel.send(await replaceOptions(guild!.goodbye.message, member, curr_guild));
         }
     }
 });
