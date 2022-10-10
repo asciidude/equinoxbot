@@ -353,6 +353,6 @@ client.on('guildMemberRemove', async (member) => {
             channel.send(await replaceOptions(guild!.goodbye.message, member, curr_guild));
         }
     }
-});=
+});
 
 client.login(process.env.TOKEN);
