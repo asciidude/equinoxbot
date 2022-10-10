@@ -94,13 +94,19 @@ export default {
         // Cleverbot
         .addSubcommand(sub => 
             sub
-                .setName('cleverbot_channel')
-                .setDescription('Set the channel for Cleverbot usage')
+                .setName('cleverbot')
+                .setDescription('Cleverbot configuration')
+                .addBooleanOption(opt =>
+                    opt
+                        .setName('enabled')
+                        .setDescription('Enable/disable Cleverbot')
+                        .setRequired(true)
+                )
                 .addChannelOption(opt =>
                     opt
                         .setName('channel')
                         .setDescription('The channel to use')
-                        .setRequired(true)
+                        .setRequired(false)
                 )
         )
 
@@ -530,7 +536,7 @@ export default {
             ///////////////
             // Cleverbot //
             ///////////////
-            case 'cleverbot_channel':
+            case 'cleverbot':
                 if(!interaction.options.getBoolean('enabled')) {
                     Server.updateOne(
                         { guild_id: interaction.guild.id },
@@ -551,7 +557,7 @@ export default {
                     break;
                 }
 
-                if(!interaction.options.getRole('role')) {
+                if(!interaction.options.getChannel('channel')) {
                     interaction.reply({
                         content: 'Oops! Check the optional parameters to set the Cleverbot channel',
                         ephemeral: true
