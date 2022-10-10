@@ -27,7 +27,12 @@ export default async (guild_id: string) => {
                 commandName: 'config',
                 roles: [],
                 administratorOverride: true
-            }
+            },
+            {
+                commandName: 'triggers',
+                roles: [],
+                administratorOverride: true
+            },
         ],
     
         cleverbot: {
