@@ -209,7 +209,7 @@ export default {
                     break;
                 }
 
-                Server.updateOne(
+                await Server.updateOne(
                     { guild_id: interaction.guild.id },
                     {
                         $pull: {
@@ -230,7 +230,7 @@ export default {
             case 'set_admin_override':
                 if(!permission) {
                     if(await commandExists(interaction.options.getString('command'))) {
-                        Server.updateOne(
+                        await Server.updateOne(
                             { guild_id: interaction.guild.id },
                             {
                                 $push: {
@@ -271,7 +271,7 @@ export default {
             case 'set_permission_role':
                 if(!permission) {
                     if(await commandExists(interaction.options.getString('command'))) {
-                        Server.updateOne(
+                        await Server.updateOne(
                             { guild_id: interaction.guild.id },
                             {
                                 $push: {
@@ -330,7 +330,7 @@ export default {
             /////////////
             case 'welcome':
                 if(interaction.options.getString('message').toLowerCase() == 'disable') {
-                    Server.updateOne(
+                    await Server.updateOne(
                         { guild_id: interaction.guild.id },
                         {
                             $set: {
@@ -350,7 +350,7 @@ export default {
                 }
 
                 if(interaction.options.getChannel('channel')) {
-                    Server.updateOne(
+                    await Server.updateOne(
                         { guild_id: interaction.guild.id },
                         {
                             $set: {
@@ -368,7 +368,7 @@ export default {
                         ephemeral: true
                     });
                 } else if(interaction.options.getBoolean('dm')) {
-                    Server.updateOne(
+                    await Server.updateOne(
                         { guild_id: interaction.guild.id },
                         {
                             $set: {
@@ -399,7 +399,7 @@ export default {
             /////////////
             case 'goodbye':
                 if(interaction.options.getString('message').toLowerCase() == 'disable') {
-                    Server.updateOne(
+                    await Server.updateOne(
                         { guild_id: interaction.guild.id },
                         {
                             $set: {
@@ -419,7 +419,7 @@ export default {
                 }
 
                 if(interaction.options.getChannel('channel')) {
-                    Server.updateOne(
+                    await Server.updateOne(
                         { guild_id: interaction.guild.id },
                         {
                             $set: {
@@ -437,7 +437,7 @@ export default {
                         ephemeral: true
                     });
                 } else if(interaction.options.getBoolean('dm')) {
-                    Server.updateOne(
+                    await Server.updateOne(
                         { guild_id: interaction.guild.id },
                         {
                             $set: {
@@ -468,7 +468,7 @@ export default {
             ///////////////
             case 'autorole':
                 if(!interaction.options.getBoolean('enabled')) {
-                    Server.updateOne(
+                    await Server.updateOne(
                         { guild_id: interaction.guild.id },
                         {
                             $set: {
@@ -493,7 +493,7 @@ export default {
                         ephemeral: true
                     })
                 } else {
-                    Server.updateOne(
+                    await Server.updateOne(
                         { guild_id: interaction.guild.id },
                         {
                             $set: {
@@ -517,7 +517,7 @@ export default {
             // Prefix //
             ////////////
             case 'prefix':
-                Server.updateOne(
+                await Server.updateOne(
                     { guild_id: interaction.guild.id },
                     {
                         $set: {
@@ -538,7 +538,7 @@ export default {
             ///////////////
             case 'cleverbot':
                 if(!interaction.options.getBoolean('enabled')) {
-                    Server.updateOne(
+                    await Server.updateOne(
                         { guild_id: interaction.guild.id },
                         {
                             $set: {
@@ -563,7 +563,7 @@ export default {
                         ephemeral: true
                     })
                 } else {
-                    Server.updateOne(
+                    await Server.updateOne(
                         { guild_id: interaction.guild.id },
                         {
                             $set: {

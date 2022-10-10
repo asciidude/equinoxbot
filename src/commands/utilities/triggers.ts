@@ -101,7 +101,7 @@ export default {
                 return;
             }
 
-            Server.updateOne(
+            await Server.updateOne(
                 { guild_id: interaction.guild.id },
                 {
                     $pull: {
