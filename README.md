@@ -8,7 +8,5 @@ https://discord.com/api/oauth2/authorize?client_id=1027424058297552937&permissio
 * @discordjs/builders: Discord builders (commands and stuff!)
 * @discordjs/rest: The REST API for Discord
 * duckduckgo-images-api: The module for accessing the DDG images API
-* imgur: The module for accessing the Imgur API
-* mongoose: Database :-)
-* tenorjs: The module for accessing the Tenor API
 * axios: Making requests for certain commands
+* mongoose: Database :-)
