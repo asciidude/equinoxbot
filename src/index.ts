@@ -172,119 +172,126 @@ setInterval(async () => {
     context = [];
 }, 5 * 3600 * 1000);
 
-client.on('messageCreate', async (message: any) => {
-    if(message.author.bot && message.channel.type != ChannelType.DM) return;
-    const guild = await Server.findOne({ guild_id: message.guild.id });
-
-    if(!guild) {
-        await createServerModel(message.guild.id);
-        while(!guild) return;
-    }
-
-    // Triggers
-    const trigger = guild!.triggers.filter((e: any) => e.trigger === message.content)[0];
+try {
+    client.on('messageCreate', async (message: any) => {
+        if(message.author.bot && message.channel.type != ChannelType.DM) return;
+        const guild = await Server.findOne({ guild_id: message.guild.id });
     
-    if(trigger) {
-        try {
-            message.reply(await replaceOptions(trigger.response, message.member, message.guild));
-            return;
-        } catch(err) {
-            console.log(
-                `Unable to send message`
-                + '\n↳' + err
-            );
+        if(!guild) {
+            await createServerModel(message.guild.id);
+            while(!guild) return;
         }
-
-        if(trigger.delete) {
-            if(!message.deletable) {
-                message.channel.send('⚠ Cannot delete trigger-message due to not enough permissions');
-                return;
-            }
-
+    
+        // Triggers
+        const trigger = guild!.triggers.filter((e: any) => e.trigger === message.content)[0];
+        
+        if(trigger) {
             try {
-                await message.delete();
-            } catch (err) {
-                message.channel.send('⚠ Cannot delete trigger-message due to 2FA being enabled');
+                message.reply(await replaceOptions(trigger.response, message.member, message.guild));
+                return;
+            } catch(err) {
+                console.log(
+                    `Unable to send message`
+                    + '\n↳' + err
+                );
             }
-        }
-    }
-
-    // Cleverbot
-    if(guild!.cleverbot.enabled && message.channel.id == guild!.cleverbot.channel) {
-        const getUser = () => context.filter((e: any) => e.id == message.author.id)[0];
-
-        let user = getUser();
-        if(!user) {
-            context.push({
-                id: message.author.id,
-                context_list: []
-            });
-
-            user = getUser();
-        }
-        
-        try {
-            if(process.env.NODE_ENV !== 'development') {
-                if(message.type == MessageType.Reply) {
-                    const replyParent = await message.channel.messages.cache.get(message.reference!.messageId!)!;
-        
-                    if(replyParent.author.id === client.user!.id) {
-                        user['context_list'].push(message.content);
-                        const cleverResponse = await cleverbot(message.content, user['context_list']);
-                        user['context_list'].push(cleverResponse);
-            
-                        message.reply(cleverResponse);
-                    }
-                } else if(message.content.startsWith(`<@${client.user!.id}>`)) {
-                    user['context_list'] = []; // Reset the context list
-
-                    user['context_list'].push(message.content.slice(2 + message.author.id.length + 3)); // Remove the beginning "<@id> "
-                    const cleverResponse = await cleverbot(message.content, user['context_list']);
-                    user['context_list'].push(cleverResponse);
-
-                    message.reply(cleverResponse);
+    
+            if(trigger.delete) {
+                if(!message.deletable) {
+                    message.channel.send('⚠ Cannot delete trigger-message due to not enough permissions');
+                    return;
+                }
+    
+                try {
+                    await message.delete();
+                } catch (err) {
+                    message.channel.send('⚠ Cannot delete trigger-message due to 2FA being enabled');
                 }
             }
-        } catch (err) {
-            message.reply('😓 Sorry, I couldn\'t figure out what to say. Try again!')
         }
-    }
-
-    const args_cmd = message.content.trim().split(/ +/g);
     
-    const cmd = args_cmd[0].slice(guild!.prefix.length).toLowerCase();
-    const args = args_cmd.slice(guild!.prefix.length);
-
-    if(!message.content.startsWith(guild!.prefix)) return;
+        // Cleverbot
+        if(guild!.cleverbot.enabled && message.channel.id == guild!.cleverbot.channel) {
+            const getUser = () => context.filter((e: any) => e.id == message.author.id)[0];
     
-    if(cmd === 'restart' && message.author.id === process.env.DEVELOPER_ID) {
-        await client.user!.setPresence({
-            activities: [{ name: 'Restarting bot, please wait...', type: ActivityType.Playing }],
-            status: 'online'
-        });
-
-        await message.reply('> 👋 Restarting bot...');
-        fs.utimesSync(__filename, new Date(), new Date());
-
-        return;
-    }
-
-    if(!(await hasPermission(cmd, message.member!, message.guild.id))) {
-        return message.reply('⛔ You do not have permission to use this command!');
-    }
-
-    const textCommand = client.textCommands.get(cmd) || client.textAliases.get(cmd);
-    if(!textCommand) return;
-
-    try {
-        await textCommand.execute(message, args, client);
-    } catch(err) {
-        if(err) console.log(err);
-        else console.log(`Failed to execute text command (${cmd}), no error provided`);
-
-        message.channel!.send(`Error in text command \`${cmd}\`! <@${process.env.DEVELOPER_ID}>, please have a look at my code!`);
-    }
-});
+            let user = getUser();
+            if(!user) {
+                context.push({
+                    id: message.author.id,
+                    context_list: []
+                });
+    
+                user = getUser();
+            }
+            
+            try {
+                if(process.env.NODE_ENV !== 'development') {
+                    if(message.type == MessageType.Reply) {
+                        const replyParent = await message.channel.messages.cache.get(message.reference!.messageId!)!;
+            
+                        if(replyParent.author.id === client.user!.id) {
+                            user['context_list'].push(message.content);
+                            const cleverResponse = await cleverbot(message.content, user['context_list']);
+                            user['context_list'].push(cleverResponse);
+                
+                            message.reply(cleverResponse);
+                        }
+                    } else if(message.content.startsWith(`<@${client.user!.id}>`)) {
+                        user['context_list'] = []; // Reset the context list
+    
+                        user['context_list'].push(message.content.slice(2 + message.author.id.length + 3)); // Remove the beginning "<@id> "
+                        const cleverResponse = await cleverbot(message.content, user['context_list']);
+                        user['context_list'].push(cleverResponse);
+    
+                        message.reply(cleverResponse);
+                    }
+                }
+            } catch (err) {
+                message.reply('😓 Sorry, I couldn\'t figure out what to say. Try again!')
+            }
+        }
+    
+        const args_cmd = message.content.trim().split(/ +/g);
+        
+        const cmd = args_cmd[0].slice(guild!.prefix.length).toLowerCase();
+        const args = args_cmd.slice(guild!.prefix.length);
+    
+        if(!message.content.startsWith(guild!.prefix)) return;
+        
+        if(cmd === 'restart' && message.author.id === process.env.DEVELOPER_ID) {
+            await client.user!.setPresence({
+                activities: [{ name: 'Restarting bot, please wait...', type: ActivityType.Playing }],
+                status: 'online'
+            });
+    
+            await message.reply('> 👋 Restarting bot...');
+            fs.utimesSync(__filename, new Date(), new Date());
+    
+            return;
+        }
+    
+        if(!(await hasPermission(cmd, message.member!, message.guild.id))) {
+            return message.reply('⛔ You do not have permission to use this command!');
+        }
+    
+        const textCommand = client.textCommands.get(cmd) || client.textAliases.get(cmd);
+        if(!textCommand) return;
+    
+        try {
+            await textCommand.execute(message, args, client);
+        } catch(err) {
+            if(err) console.log(err);
+            else console.log(`Failed to execute text command (${cmd}), no error provided`);
+    
+            message.channel!.send(`Error in text command \`${cmd}\`! <@${process.env.DEVELOPER_ID}>, please have a look at my code!`);
+        }
+    });
+} catch (err) {
+    console.log(
+        `Error in text commands, please look at my code.`
+        + '\n↳' + err
+    );
+}
 
 client.on('guildMemberAdd', async (member) => {
     if(member.user.bot) return;
