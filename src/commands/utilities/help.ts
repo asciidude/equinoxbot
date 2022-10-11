@@ -77,7 +77,7 @@ export default {
 
 		collector.on('end', (collection: any) => {
 			try {
-				interaction.deleteReply();
+				interaction.followUp('This help embed has been closed, sorry!');
 			} catch (err) {
 				console.log(err);
 			}

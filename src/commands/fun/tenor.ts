@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { Tenor } from '../..';
+import axios from 'axios';
 
 export default {
     data: new SlashCommandBuilder()
@@ -12,10 +12,21 @@ export default {
                 .setRequired(true)
         ),
     execute: async (interaction: any) => {
-        const q = await Tenor.Search.Query(interaction.options.getString('query'), '1');
+        const res = await axios.get(
+            'https://tenor.googleapis.com/v2/search' +
+            `?q=${interaction.options.getString('query')}` +
+            `&key=${process.env.TENOR_API_KEY}` +
+            '&limit=50' +
+            '&country=US' +
+            `&locale=${process.env.TENOR_LOCALE}` +
+            `&contentfilter=${process.env.TENOR_FILTER_STATUS}` +
+            '&media_filter=gif,tinygif,mp4,tinymp4'
+        );
+
+        const random = Math.floor(Math.random() * res.data.results.length);
 
         interaction.reply({
-            content: q[0].url,
+            content: res.data.results[random].url,
             ephemeral: false
         });
     }

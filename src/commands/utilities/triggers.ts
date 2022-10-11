@@ -7,7 +7,7 @@ import {
     ButtonStyle
 } from "discord.js";
 import Server from "../../models/Server.model";
-import { encode, decode } from 'js-base64'
+import { encode } from 'js-base64'
 
 export default {
     data: new SlashCommandBuilder()

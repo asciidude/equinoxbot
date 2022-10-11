@@ -11,14 +11,11 @@
     "@discordjs/rest": "^1.2.0",
     "@types/duckduckgo-images-api": "^1.0.1",
     "axios": "^1.1.2",
-    "chokidar": "^3.5.3",
     "cleverbot-free": "^1.1.11",
     "discord.js": "^14.5.0",
     "dotenv": "^16.0.3",
     "duckduckgo-images-api": "^1.0.5",
-    "imgur": "^2.2.0",
     "js-base64": "^3.7.2",
-    "mongoose": "^6.6.5",
-    "tenorjs": "^1.0.10"
+    "mongoose": "^6.6.5"
   }
 }

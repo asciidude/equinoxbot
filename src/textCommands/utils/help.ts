@@ -80,8 +80,8 @@ export default {
 
 		collector.on('end', collection => {
 			try {
-				msg.delete();
-			} catch (err) {
+				msg.reply('This help embed has been closed. Sorry!');
+			} catch(err) {
 				console.log(err);
 			}
 		});

@@ -15,7 +15,6 @@ import Discord, {
 } from 'discord.js';
 import replaceOptions from './utils/replaceOptions';
 import cleverbot from 'cleverbot-free';
-import chokidar from 'chokidar';
 import path from 'path';
 
 declare module 'discord.js' {
@@ -43,24 +42,6 @@ mongoose.connect(
 );
 
 import Server from './models/Server.model';
-
-// Imgur
-import { ImgurClient } from 'imgur';
-export const imgur = new ImgurClient({
-    clientId: process.env.IMGUR_ID,
-    clientSecret: process.env.IMGUR_SECRET,
-    //refreshToken: process.env.IMGUR_REFRESH_TOKEN
-});
-
-// Tenor
-const tenor = require('tenorjs');
-export const Tenor = tenor.client({
-    "Key": process.env.TENOR_API_KEY!,
-    "Filter": process.env.TENOR_FILTER_STATUS,
-    "Locale": process.env.TENOR_LOCALE,
-    "MediaFilter": "basic",
-    "DateFormat": "D/MM/YYYY - H:mm:ss A"
-});
 
 import hasPermission from './utils/hasPermission';
 import createServerModel from './utils/createServerModel';
@@ -115,19 +96,11 @@ for (const file of textCommandFiles) {
 
 client.once('ready', async () => {
     console.log(`${client.user!.username} is now ready!`);
-    const guild = client.guilds.cache.get(process.env.GUILD_ID!)!;
 
     client.user!.setPresence({
-        activities: [{ name: `over ${guild.memberCount} users`, type: ActivityType.Watching }],
-        status: 'dnd'
+        activities: [{ name: 'slash commands and /help for text-commands', type: ActivityType.Watching }],
+        status: 'online'
     });
-
-    setInterval(() => {
-        client.user!.setPresence({
-            activities: [{ name: `over ${guild.memberCount} users`, type: ActivityType.Watching }],
-            status: 'dnd'
-        });
-    }, 30 * 1000)
 
     // Register commands
     const rest = new REST({
@@ -193,6 +166,12 @@ try {
 }
 
 let context: any[] = []; // Instance-dependent contexts :D
+
+// Clear context every 5 hours
+setInterval(async () => {
+    context = [];
+}, 5 * 3600 * 1000);
+
 client.on('messageCreate', async (message: any) => {
     if(message.author.bot && message.channel.type != ChannelType.DM) return;
     const guild = await Server.findOne({ guild_id: message.guild.id });
@@ -245,7 +224,7 @@ client.on('messageCreate', async (message: any) => {
         }
         
         try {
-            if(process.env.NODE_ENV !== 'development') {
+            //if(process.env.NODE_ENV !== 'development') {
                 if(message.type == MessageType.Reply) {
                     const replyParent = await message.channel.messages.cache.get(message.reference!.messageId!)!;
         
@@ -257,13 +236,15 @@ client.on('messageCreate', async (message: any) => {
                         message.reply(cleverResponse);
                     }
                 } else if(message.content.startsWith(`<@${client.user!.id}>`)) {
+                    user['context_list'] = []; // Reset the context list
+
                     user['context_list'].push(message.content.slice(2 + message.author.id.length + 3)); // Remove the beginning "<@id> "
                     const cleverResponse = await cleverbot(message.content, user['context_list']);
                     user['context_list'].push(cleverResponse);
-                    
+
                     message.reply(cleverResponse);
                 }
-            }
+            //}
         } catch (err) {
             message.reply('😓 Sorry, I couldn\'t figure out what to say. Try again!')
         }
@@ -275,13 +256,42 @@ client.on('messageCreate', async (message: any) => {
     const args = args_cmd.slice(guild!.prefix.length);
 
     if(!message.content.startsWith(guild!.prefix)) return;
+    
+    if(cmd === 'restart' && message.author.id === process.env.DEVELOPER_ID) {
+        await client.user!.setPresence({
+            activities: [{ name: 'Restarting bot, please wait...', type: ActivityType.Playing }],
+            status: 'online'
+        });
+
+        const initRestart = await message.reply('> **Initialize Restart**\n✅ Restarting bot...');
+        setTimeout(async() => {
+            await initRestart.edit(initRestart.content + '\n\n> **Context List**\n🔃 Clear context list');
+            context = [];
+            await initRestart.edit(initRestart.content + '\n✅ Clear context list');
+
+            setTimeout(async() => {
+                await initRestart.edit(initRestart.content + '\n\n> **Finish Restart**\n🔃 Running Client#destroy() and logging in');
+                client.destroy();
+                client.login(process.env.TOKEN).then(async () => {
+                    await initRestart.edit(initRestart.content + '\n✅ Bot has been successfully restarted');
+        
+                    await client.user!.setPresence({
+                        activities: [{ name: 'slash commands and /help for text-commands', type: ActivityType.Watching }],
+                        status: 'online'
+                    });
+                });
+            }, 3 * 1000);
+        }, 3 * 1000);
+
+        return;
+    }
 
     if(!(await hasPermission(cmd, message.member!, message.guild.id))) {
         return message.reply('⛔ You do not have permission to use this command!');
     }
 
     const textCommand = client.textCommands.get(cmd) || client.textAliases.get(cmd);
-    if(!textCommand) return message.reply('⚠ Command not found');
+    if(!textCommand) return;
 
     try {
         await textCommand.execute(message, args, client);
@@ -354,5 +364,24 @@ client.on('guildMemberRemove', async (member) => {
         }
     }
 });
+
+// Restart every 24 hours
+setInterval(async () => {
+    await client.user!.setPresence({
+        activities: [{ name: 'Restarting bot, please wait...', type: ActivityType.Playing }],
+        status: 'online'
+    });
+
+    context = [];
+    client.destroy();
+    client.login(process.env.TOKEN).then(() => {
+        console.log('✅ Bot has been automatically restarted: 24/hr uptime limit reached');
+
+        client.user!.setPresence({
+            activities: [{ name: 'slash commands and /help for text-commands', type: ActivityType.Watching }],
+            status: 'online'
+        });
+    });
+}, 24 * 3600 * 1000);
 
 client.login(process.env.TOKEN);
