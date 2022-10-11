@@ -224,7 +224,7 @@ client.on('messageCreate', async (message: any) => {
         }
         
         try {
-            //if(process.env.NODE_ENV !== 'development') {
+            if(process.env.NODE_ENV !== 'development') {
                 if(message.type == MessageType.Reply) {
                     const replyParent = await message.channel.messages.cache.get(message.reference!.messageId!)!;
         
@@ -244,7 +244,7 @@ client.on('messageCreate', async (message: any) => {
 
                     message.reply(cleverResponse);
                 }
-            //}
+            }
         } catch (err) {
             message.reply('😓 Sorry, I couldn\'t figure out what to say. Try again!')
         }
@@ -263,25 +263,8 @@ client.on('messageCreate', async (message: any) => {
             status: 'online'
         });
 
-        const initRestart = await message.reply('> **Initialize Restart**\n✅ Restarting bot...');
-        setTimeout(async() => {
-            await initRestart.edit(initRestart.content + '\n\n> **Context List**\n🔃 Clear context list');
-            context = [];
-            await initRestart.edit(initRestart.content + '\n✅ Clear context list');
-
-            setTimeout(async() => {
-                await initRestart.edit(initRestart.content + '\n\n> **Finish Restart**\n🔃 Running Client#destroy() and logging in');
-                client.destroy();
-                client.login(process.env.TOKEN).then(async () => {
-                    await initRestart.edit(initRestart.content + '\n✅ Bot has been successfully restarted');
-        
-                    await client.user!.setPresence({
-                        activities: [{ name: 'slash commands and /help for text-commands', type: ActivityType.Watching }],
-                        status: 'online'
-                    });
-                });
-            }, 3 * 1000);
-        }, 3 * 1000);
+        await message.reply('> 👋 Restarting bot...');
+        fs.utimesSync(__filename, new Date(), new Date());
 
         return;
     }
@@ -372,16 +355,7 @@ setInterval(async () => {
         status: 'online'
     });
 
-    context = [];
-    client.destroy();
-    client.login(process.env.TOKEN).then(() => {
-        console.log('✅ Bot has been automatically restarted: 24/hr uptime limit reached');
-
-        client.user!.setPresence({
-            activities: [{ name: 'slash commands and /help for text-commands', type: ActivityType.Watching }],
-            status: 'online'
-        });
-    });
+    fs.utimesSync(__filename, new Date(), new Date());
 }, 24 * 3600 * 1000);
 
 client.login(process.env.TOKEN);
