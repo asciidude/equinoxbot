@@ -64,6 +64,17 @@ export default {
 
         if(interaction.options.getSubcommand() === 'add') {
             // Add triggers
+            const triggers = guild!.triggers.filter((e: any) => e.trigger === interaction.options.getString('trigger'));
+            
+            if(triggers.length > 0) {
+                interaction.reply({
+                    content: `⚠ The trigger \`${interaction.options.getString('trigger')}\` already exists. Please try a new one, or re-add the old one with the new content`,
+                    ephemeral: true
+                });
+
+                return;
+            }
+
             await Server.updateOne(
                 { guild_id: interaction.guild.id },
                 {
