@@ -293,45 +293,45 @@ try {
     );
 }
 
-client.on('guildMemberAdd', async (member) => {
-    if(member.user.bot) return;
-    const curr_guild = client.guilds.cache.get(process.env.GUILD_ID!) as Guild;
-    const guild = await Server.findOne({ guild_id: curr_guild.id });
+try {
+    client.on('guildMemberAdd', async (member) => {
+        if(member.user.bot) return;
+        const curr_guild = client.guilds.cache.get(process.env.GUILD_ID!) as Guild;
+        const guild = await Server.findOne({ guild_id: curr_guild.id });
 
-    if(guild!.autoRole.enabled) {
-        try {
-            member.roles.add(curr_guild.roles.cache.get(guild!.autoRole.role)!, 'Auto-role');
-        } catch (err) {
-            console.log(
-                `Unable to add role to ${member.user.username}`
-                + '\n↳' + err
-            );
+        if(guild!.autoRole.enabled) {
+                member.roles.add(curr_guild.roles.cache.get(guild!.autoRole.role)!, 'Auto-role');
         }
-    }
 
-    if(guild!.welcome.enabled) {
-        if(guild!.welcome.channel == 'dm') {
-            try {
-                member.send(await replaceOptions(guild!.welcome.message, member, curr_guild));
-            } catch (err) {
-                console.log(
-                    `Unable to DM ${member.user.username}`
-                    + '\n↳' + err
-                );
-            }
-        } else {
-            try {
-                const channel = curr_guild!.channels.cache.get(guild!.welcome.channel) as TextChannel;
-                channel.send(await replaceOptions(guild!.welcome.message, member, curr_guild));
-            } catch (err) {
-                console.log(
-                    `Unable to send welcome message`
-                    + '\n↳' + err
-                );
+        if(guild!.welcome.enabled) {
+            if(guild!.welcome.channel == 'dm') {
+                try {
+                    member.send(await replaceOptions(guild!.welcome.message, member, curr_guild));
+                } catch (err) {
+                    console.log(
+                        `Unable to DM ${member.user.username}`
+                        + '\n↳' + err
+                    );
+                }
+            } else {
+                try {
+                    const channel = curr_guild!.channels.cache.get(guild!.welcome.channel) as TextChannel;
+                    channel.send(await replaceOptions(guild!.welcome.message, member, curr_guild));
+                } catch (err) {
+                    console.log(
+                        `Unable to send welcome message`
+                        + '\n↳' + err
+                    );
+                }
             }
         }
-    }
-});
+    });
+} catch (err) {
+    console.log(
+        'Error in guildMemberAdd'
+        + '\n↳' + err
+    );
+}
 
 client.on('guildMemberRemove', async (member) => {
     if(member.user.bot) return;
