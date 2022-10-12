@@ -300,7 +300,14 @@ try {
         const guild = await Server.findOne({ guild_id: curr_guild.id });
 
         if(guild!.autoRole.enabled) {
+            try {
                 member.roles.add(curr_guild.roles.cache.get(guild!.autoRole.role)!, 'Auto-role');
+            } catch (err) {
+                console.log(
+                    'Error in guildMemberAdd:addRole'
+                    + '\n↳' + err
+                );
+            }
         }
 
         if(guild!.welcome.enabled) {
@@ -349,8 +356,15 @@ client.on('guildMemberRemove', async (member) => {
                 );
             }
         } else {
-            const channel = curr_guild!.channels.cache.get(guild!.goodbye.channel) as TextChannel;
-            channel.send(await replaceOptions(guild!.goodbye.message, member, curr_guild));
+            try {
+                const channel = curr_guild!.channels.cache.get(guild!.goodbye.channel) as TextChannel;
+                channel.send(await replaceOptions(guild!.goodbye.message, member, curr_guild));
+            } catch (err) {
+                console.log(
+                    `Unable to send goodbye message`
+                    + '\n↳' + err
+                );
+            }
         }
     }
 });
