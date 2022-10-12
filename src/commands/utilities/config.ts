@@ -173,8 +173,7 @@ export default {
                         .addChoices(
                             { name: '🙋 Welcome Configuration', value: 'welcome' },
                             { name: '😢 Goodbye Configuration', value: 'goodbye' },
-                            { name: '🦺 Auto-role Configuration', value: 'autorole' },
-                            { name: '👂 View Prefix', value: 'prefix' },
+                            { name: '🦺 Auto-role Configuration', value: 'autorole' }
                         )
                 )
         )

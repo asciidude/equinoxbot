@@ -258,6 +258,10 @@ try {
     
         if(!message.content.startsWith(guild!.prefix)) return;
         
+        if(cmd === 'test' && message.author.id === process.env.DEVELOPER_ID) {
+            client.emit('guildMemberAdd', message.member);
+        }
+
         if(cmd === 'restart' && message.author.id === process.env.DEVELOPER_ID) {
             await client.user!.setPresence({
                 activities: [{ name: 'Restarting bot, please wait...', type: ActivityType.Playing }],
@@ -293,15 +297,18 @@ try {
     );
 }
 
-try {
-    client.on('guildMemberAdd', async (member) => {
+client.on('guildMemberAdd', async (member) => {
+    try {
         if(member.user.bot) return;
         const curr_guild = client.guilds.cache.get(process.env.GUILD_ID!) as Guild;
         const guild = await Server.findOne({ guild_id: curr_guild.id });
 
         if(guild!.autoRole.enabled) {
             try {
-                member.roles.add(curr_guild.roles.cache.get(guild!.autoRole.role)!, 'Auto-role');
+                const role = curr_guild.roles.cache.get(guild!.autoRole.role)!;
+                if(member.manageable || role.editable) {
+                    member.roles.add(role, 'Auto-role');
+                }
             } catch (err) {
                 console.log(
                     'Error in guildMemberAdd:addRole'
@@ -332,13 +339,13 @@ try {
                 }
             }
         }
-    });
-} catch (err) {
-    console.log(
-        'Error in guildMemberAdd'
-        + '\n↳' + err
-    );
-}
+    } catch (err) {
+        console.log(
+            'Error in guildMemberAdd'
+            + '\n↳' + err
+        );
+    }
+});
 
 client.on('guildMemberRemove', async (member) => {
     if(member.user.bot) return;
