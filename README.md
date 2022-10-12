@@ -1,5 +1,7 @@
 # Equinox Bot
-The multi-pourpose bot with incredible features, extremely configuration options, and certainly fun to use.
+Equinox is a multi-purpose Discord bot meant to satisfy your needs - containing tons of configuration options and
+a wide spectrum of features - even an AI chatbot (using Cleverbot)! This bot is not only easy to setup and comes
+"out of the box", but it is also quite fun to play with. Cleverbot, especially.
 
 # Invite
 https://discord.com/api/oauth2/authorize?client_id=1027424058297552937&permissions=8&scope=bot%20applications.commands
@@ -9,4 +11,4 @@ https://discord.com/api/oauth2/authorize?client_id=1027424058297552937&permissio
 * @discordjs/rest: The REST API for Discord
 * duckduckgo-images-api: The module for accessing the DDG images API
 * axios: Making requests for certain commands
-* mongoose: Database :-)
+* mongoose: The MongoDB module I use
