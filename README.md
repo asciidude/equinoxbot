@@ -10,7 +10,7 @@ commenting on how good it is as well, so you know you're in for a treat!
 
 **Invitation Link:** https://discord.com/api/oauth2/authorize?client_id=1027424058297552937&permissions=8&scope=bot%20applications.commands
 
-<small>💡 Fun fact! Equinox derives from the latin word "aequi"</small>
+<small>💡 Fun fact! Equinox derives from the latin words "aequus" and "nox"</small>
 
 # Dependencies
 * **@discordjs/builders**: Discord builders (commands and stuff!)
