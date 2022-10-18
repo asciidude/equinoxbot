@@ -11,7 +11,8 @@ import Discord, {
     GatewayIntentBits,
     Guild,
     MessageType,
-    ChannelType
+    ChannelType,
+    Channel
 } from 'discord.js';
 import replaceOptions from './utils/replaceOptions';
 import cleverbot from 'cleverbot-free';
@@ -94,7 +95,9 @@ for (const file of textCommandFiles) {
     client.textCommands.set(command.name, command);
 }
 
+let intro: string;
 client.once('ready', async () => {
+    intro! = await fs.readFileSync(__dirname + '/intro.txt', 'utf8');
     console.log(`${client.user!.username} is now ready!`);
 
     client.user!.setPresence({
@@ -129,9 +132,26 @@ client.once('ready', async () => {
     })();
 });
 
+client.on('guildCreate', async (guild: any) => {
+    //const channel = guild.channels.cache.find((c: Channel) => c.type === ChannelType.GuildText && c.permissionsFor(guild.me).has(PermissionFlagsBits.SendMessages))
+    const channel = guild.channels.cache.filter((c: Channel) => c.type === ChannelType.GuildText).find((x: any) => x.position === 0);
+
+    if(channel && intro) {
+        try {
+            channel.send(await replaceOptions(intro, client, guild));
+        } catch (err) {
+            console.log(
+                `Unable to send introduction message`
+                + '\n↳' + err
+            );
+        }
+    }
+});
+
 try {
     client.on('interactionCreate', async (interaction: any) => {
         const guild = await Server.findOne({ guild_id: interaction.guild.id });
+        client.emit("guildCreate", interaction.guild);
     
         if(!guild) {
             createServerModel(interaction.guild.id);

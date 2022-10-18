@@ -640,7 +640,8 @@ export default {
                         },
                         {
                             name: 'GUILD',
-                            value: '.NAME | The guild\'s name',
+                            value: '.NAME | The guild\'s name' +
+                                   '.OWNER | Get the owner\'s name',
                             inline: true
                         }
                     )

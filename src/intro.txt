@@ -1,0 +1,5 @@
+**Hello, {GUILD.OWNER}! Thank you for adding me.**
+Make sure to setup your server config with `/config`! You can also find the CleverBot config there.
+
+If you have anymore questions, please join my support server found in my about me!
+Thank you.
