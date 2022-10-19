@@ -151,10 +151,10 @@ client.on('guildCreate', async (guild: any) => {
 try {
     client.on('interactionCreate', async (interaction: any) => {
         const guild = await Server.findOne({ guild_id: interaction.guild.id });
-        client.emit("guildCreate", interaction.guild);
     
         if(!guild) {
-            createServerModel(interaction.guild.id);
+            await createServerModel(message.guild.id);
+            while(!guild) return;
         }
 
         if(interaction.isCommand() == false) return;
