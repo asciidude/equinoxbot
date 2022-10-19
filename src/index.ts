@@ -326,6 +326,8 @@ client.on('guildMemberAdd', async (member) => {
         if(guild!.autoRole.enabled) {
             try {
                 const role = curr_guild.roles.cache.get(guild!.autoRole.role)!;
+                if(!role) return;
+                
                 if(member.manageable || role.editable) {
                     member.roles.add(role, 'Auto-role');
                 }
