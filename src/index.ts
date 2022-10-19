@@ -153,7 +153,7 @@ try {
         const guild = await Server.findOne({ guild_id: interaction.guild.id });
     
         if(!guild) {
-            await createServerModel(message.guild.id);
+            await createServerModel(interaction.guild.id);
             while(!guild) return;
         }
 
