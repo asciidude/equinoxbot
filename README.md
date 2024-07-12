@@ -1,3 +1,5 @@
+# ⚠ This project is no longer maintained. Feel free to use the code and host your own bot with it.
+
 <h1 align="center">
     🌌 Equinox 🌌
 </h1>
